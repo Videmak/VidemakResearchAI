@@ -1,0 +1,10 @@
+# HTTPS on your own domain with an automatic certificate. In .env set SITE_ADDRESS (for example
+# write.example.edu) and PUBLIC_URL=https://write.example.edu, point the domain's DNS at this
+# server, then:
+#   docker compose -f docker-compose.yml -f deploy/compose.https.yml up -d
+services:
+  router:
+    ports: !override
+      - "80:80"
+      - "443:443"
+      - "443:443/udp"

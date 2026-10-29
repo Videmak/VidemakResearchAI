@@ -1,0 +1,71 @@
+@import "tailwindcss";
+/* The editor package ships Tailwind classes; scan its source too. */
+@source "../../../packages/editor/src";
+
+/*
+ * Videmak design tokens, from the approved mockups (videmak-plan/mockups-2026-10-28,
+ * source/base.css). Colours come only from these.
+ */
+@theme {
+  --font-sans: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
+  --font-serif: var(--font-serif), Georgia, serif;
+  --font-mono: ui-monospace, SFMono-Regular, Menlo, monospace;
+
+  --color-brand: #2563eb;
+  --color-brand-600: #1d4ed8;
+  --color-brand-50: #eff6ff;
+  --color-brand-100: #dbeafe;
+  --color-ink: #0f172a;
+  --color-ink-2: #334155;
+  --color-muted: #64748b;
+  --color-subtle: #94a3b8;
+  --color-line: #e5e7eb;
+  --color-line-2: #f1f5f9;
+  --color-soft: #f8fafc;
+  --color-amber: #f59e0b;
+  --color-amber-50: #fffbeb;
+  --color-positive: #16a34a;
+  --color-cite: #2563eb;
+  /* Surfaces */
+  --color-page: #ffffff;
+  --color-surface: #ffffff;
+  --color-panel: #f8fafc;
+
+  /* The editor uses "primary-*" utilities; they follow the brand. */
+  --color-primary-50: #eff6ff;
+  --color-primary-100: #dbeafe;
+  --color-primary-200: #bfdbfe;
+  --color-primary-300: #93c5fd;
+  --color-primary-400: #60a5fa;
+  --color-primary-500: #3b82f6;
+  --color-primary-600: #2563eb;
+  --color-primary-700: #1d4ed8;
+  --color-primary-800: #1e40af;
+  --color-primary-900: #1e3a8a;
+
+  --shadow-card: 0 1px 2px rgb(15 23 42 / 0.04), 0 0 0 1px #e5e7eb;
+  --shadow-float: 0 22px 50px -18px rgb(15 23 42 / 0.35);
+  --shadow-brand: 0 6px 16px -6px rgb(37 99 235 / 0.7);
+}
+
+:root {
+  /* Variables the editor reads for its accent colour. */
+  --theme-primary: #2563eb;
+  --theme-primary-rgb: 37, 99, 235;
+  --theme-primary-dark: #1d4ed8;
+  --theme-primary-light: #60a5fa;
+  --m-brand: #2563eb;
+  --m-brand-dark: #1d4ed8;
+  --m-brand-soft: #eff6ff;
+  --m-ink: #0f172a;
+  --m-on-brand: #ffffff;
+  --m-on-ink: #ffffff;
+}
+
+html, body { background: #ffffff; color: var(--color-ink); }
+body { font-family: var(--font-sans); -webkit-font-smoothing: antialiased; }
+
+/* Phones: inputs at 16px so iOS never zooms. */
+@media (max-width: 767px) {
+  input, textarea, select { font-size: 16px; }
+}

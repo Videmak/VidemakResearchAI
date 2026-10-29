@@ -1,0 +1,511 @@
+/**
+ * MyLibrary Module - Type Definitions
+ * 
+ * This file contains all TypeScript interfaces and types for the Library module.
+ * The Library module manages academic documents with features like:
+ * - Document organization and metadata display
+ * - Dynamic LLM-powered columns (summaries, conclusions, etc.)
+ * - Export functionality (CSV, Excel, BibTeX, XML, RIS)
+ * - File-based chat for Q&A against documents
+ * 
+ * @module types/library
+ */
+
+// ============================================================================
+// Folder Types
+// ============================================================================
+
+/**
+ * Represents a folder/collection in the library
+ * Folders help organize documents into logical groups
+ */
+export interface LibraryFolder {
+  id: string;
+  /** Folder name displayed in UI */
+  name: string;
+  /** Optional description */
+  description?: string;
+  /** Parent folder ID (null for root folders) */
+  parentId: string | null;
+  /** Source of the folder - local or imported */
+  source: 'local' | 'zotero' | 'mendeley';
+  /** Zotero collection key if synced from Zotero */
+  zoteroKey?: string;
+  /** Mendeley folder key if synced from Mendeley */
+  mendeleyKey?: string;
+  /** Number of documents in this folder */
+  documentCount: number;
+  /** Whether this folder is expanded in the sidebar */
+  isExpanded?: boolean;
+  /** When the folder was created */
+  createdAt: Date;
+  /** When the folder was last updated */
+  updatedAt?: Date;
+  /** Color for folder icon (optional) */
+  color?: string;
+  /** Icon identifier for provider root folders */
+  icon?: string;
+  /** Sort order */
+  order?: number;
+}
+
+export type GroupLibraryAccess = 'private-owned' | 'public-restricted' | 'public-free';
+export type GroupLibraryRole = 'owner' | 'admin' | 'editor' | 'viewer' | 'pending_requester';
+
+/**
+ * Represents a shared group library shown alongside personal folders.
+ * This is UI-first metadata; documents/folders can be wired to backend ownership later.
+ */
+export interface GroupLibrary {
+  id: string;
+  name: string;
+  slug?: string;
+  description?: string;
+  access: GroupLibraryAccess;
+  documentCount: number;
+  folderCount: number;
+  memberCount?: number;
+  ownerName?: string;
+  currentUserRole?: GroupLibraryRole;
+  createdAt: Date;
+  updatedAt?: Date;
+  color?: string;
+}
+
+/**
+ * Folder tree node for hierarchical display
+ */
+export interface FolderTreeNode extends LibraryFolder {
+  children: FolderTreeNode[];
+  level: number;
+}
+
+/**
+ * Special folder views
+ * - 'unfiled': Documents not in any folder (folder_id IS NULL)
+ * - 'all': All documents regardless of folder
+ * - 'recent': Recently viewed documents
+ * - 'favorites': Favorited documents
+ * - 'my_publications': Documents the user marked as papers they authored
+ * - 'trash': Deleted documents
+ */
+export type SpecialFolderView = 'unfiled' | 'all' | 'recent' | 'favorites' | 'my_publications' | 'trash';
+
+/**
+ * Current folder selection state
+ */
+export interface FolderSelection {
+  type: 'folder' | 'special';
+  folderId?: string;
+  specialView?: SpecialFolderView;
+}
+
+// ============================================================================
+// Document Types
+// ============================================================================
+
+/**
+ * Represents a document/file in the library
+ * Contains metadata extracted from academic papers
+ */
+export interface LibraryDocument {
+  id: string;
+  /** Original filename (e.g., "2 full_text.pdf") */
+  filename: string;
+  /** Document type: pdf, docx, notebook, etc. */
+  fileType: 'pdf' | 'docx' | 'doc' | 'pptx' | 'odt' | 'rtf' | 'html' | 'txt' | 'zip' | 'notebook' | 'markdown' | 'url';
+  /** Academic paper title */
+  title?: string;
+  /** DOI identifier */
+  doi?: string;
+  /** List of authors */
+  authors?: string[];
+  /** Publisher name */
+  publisher?: string;
+  /** Publication year */
+  year?: number;
+  /** Citation count from Google Scholar/APIs */
+  citationCount?: number;
+  /** Folder/collection this document belongs to */
+  folder?: string;
+  /** When the document was last viewed */
+  lastViewed?: Date;
+  /** When the document was uploaded */
+  uploadedAt: Date;
+  /** File size in bytes */
+  fileSize?: number;
+  /** URL path to the document */
+  filePath?: string;
+  /**
+   * Processing status. "skipped": a Library limit kept the paper out (Find
+   * Articles); metadata.library_limit holds the reason (utils/libraryLimits.ts).
+   */
+  processingStatus?: 'pending' | 'processing' | 'ready' | 'failed' | 'skipped';
+  /** Processing error message if failed */
+  processingError?: string;
+  /** Number of chunks created */
+  chunkCount?: number;
+  /** 
+   * Dynamic column data - stores LLM-generated content for each column
+   * Key is the column ID, value is the generated content
+   */
+  columnData: Record<string, ColumnContent>;
+  /** Optional metadata - can store additional info like PDF URLs from search */
+  metadata?: Record<string, any>;
+}
+
+/**
+ * Content generated by LLM for a specific column
+ */
+export interface ColumnContent {
+  /** The generated text content */
+  content: string;
+  /** Whether this content is currently being generated */
+  isLoading?: boolean;
+  /** Error message if generation failed */
+  error?: string;
+  /** Timestamp when content was generated */
+  generatedAt?: Date;
+  /** Citations/references within the content */
+  citations?: string[];
+}
+
+// ============================================================================
+// Column Types
+// ============================================================================
+
+/**
+ * Represents a column that can be added to the library table
+ * Each column uses an LLM prompt to extract/summarize information
+ */
+export interface LibraryColumn {
+  id: string;
+  /** Display name for the column header */
+  name: string;
+  /** The prompt template sent to LLM to generate this column's content */
+  prompt: string;
+  /** Whether this is a system-suggested column */
+  isSystemColumn: boolean;
+  /** Whether this column is currently visible in the table */
+  isVisible: boolean;
+  /** Column width in pixels (optional) */
+  width?: number;
+  /** Order/position in the table */
+  order: number;
+}
+
+/**
+ * Predefined column types that appear in "Suggested Columns"
+ */
+export type SuggestedColumnType =
+  | 'summarized_abstract'
+  | 'results'
+  | 'summarized_introduction'
+  | 'methods_used'
+  | 'literature_survey'
+  | 'limitations'
+  | 'contributions'
+  | 'practical_implications'
+  | 'objectives'
+  | 'findings'
+  | 'tldr'
+  | 'conclusions';
+
+/**
+ * Configuration for suggested columns with their prompts
+ */
+export interface SuggestedColumnConfig {
+  id: SuggestedColumnType;
+  name: string;
+  /** Prompt template - {document} will be replaced with actual content */
+  prompt: string;
+}
+
+// ============================================================================
+// Quality/LLM Settings
+// ============================================================================
+
+/**
+ * LLM quality tiers for document processing
+ * Affects model selection and processing depth
+ */
+export type QualityTier = 'standard' | 'premium' | 'advanced';
+
+/**
+ * Configuration for each quality tier
+ */
+export interface QualityConfig {
+  id: QualityTier;
+  name: string;
+  description: string;
+  /** Whether this tier is locked (requires subscription) */
+  isLocked: boolean;
+  /** Icon to display (lock for locked tiers) */
+  icon?: string;
+}
+
+// ============================================================================
+// Export Types
+// ============================================================================
+
+/**
+ * Supported export formats
+ */
+export type ExportFormat = 'csv' | 'excel' | 'bibtex' | 'xml' | 'docx' | 'pdf' | 'png';
+
+/**
+ * Export option configuration
+ */
+export interface ExportOption {
+  id: ExportFormat;
+  name: string;
+  /** File extension */
+  extension: string;
+  /** MIME type for download */
+  mimeType: string;
+  icon: string;
+}
+
+// ============================================================================
+// Sort Types
+// ============================================================================
+
+/**
+ * Fields that can be used for sorting
+ */
+export type SortField = 
+  | 'filename' 
+  | 'title' 
+  | 'uploadedAt' 
+  | 'lastViewed' 
+  | 'authors' 
+  | 'publisher';
+
+/**
+ * Sort direction
+ */
+export type SortDirection = 'asc' | 'desc';
+
+/**
+ * Sort configuration
+ */
+export interface SortConfig {
+  field: SortField;
+  direction: SortDirection;
+}
+
+/**
+ * Available presentation modes for the library page.
+ */
+export type LibraryViewMode = 'detailed' | 'list';
+
+// ============================================================================
+// Chat Types
+// ============================================================================
+
+/**
+ * Chat message in the library chat
+ */
+export interface LibraryChatMessage {
+  id: string;
+  role: 'user' | 'assistant' | 'system';
+  content: string;
+  timestamp: Date;
+  /** Document IDs that were referenced in this message */
+  referencedDocuments?: string[];
+  /** Citations from the documents */
+  citations?: ChatCitation[];
+}
+
+/**
+ * Citation reference in chat responses
+ */
+export interface ChatCitation {
+  documentId: string;
+  documentTitle: string;
+  excerpt: string;
+  pageNumber?: number;
+}
+
+// ============================================================================
+// State Types
+// ============================================================================
+
+/**
+ * Main state for the Library module
+ */
+export interface LibraryState {
+  /** All documents in the library */
+  documents: LibraryDocument[];
+  /** Currently visible columns */
+  visibleColumns: LibraryColumn[];
+  /** All available columns (including hidden) */
+  allColumns: LibraryColumn[];
+  /** Selected document IDs (for bulk actions) */
+  selectedDocuments: string[];
+  /** Current sort configuration */
+  sort: SortConfig;
+  /** Current quality tier */
+  quality: QualityTier;
+  /** Search query */
+  searchQuery: string;
+  /** Chat messages */
+  chatMessages: LibraryChatMessage[];
+  /** Whether chat panel is open */
+  isChatOpen: boolean;
+  /** Pagination state */
+  pagination: PaginationState;
+  /** Loading states */
+  isLoading: boolean;
+  isUploadingFiles: boolean;
+}
+
+/**
+ * Pagination state for the document list
+ */
+export interface PaginationState {
+  /** Current page (1-indexed) */
+  currentPage: number;
+  /** Items per page */
+  pageSize: number;
+  /** Total number of documents */
+  totalDocuments: number;
+  /** Whether there are more documents to load */
+  hasMore: boolean;
+}
+
+// ============================================================================
+// Action Types (for future reducer/context)
+// ============================================================================
+
+/**
+ * Actions that can be performed on the library
+ * These will be connected to backend API calls
+ */
+export type LibraryAction =
+  | { type: 'SET_DOCUMENTS'; payload: LibraryDocument[] }
+  | { type: 'ADD_DOCUMENT'; payload: LibraryDocument }
+  | { type: 'DELETE_DOCUMENT'; payload: string }
+  | { type: 'UPDATE_DOCUMENT'; payload: Partial<LibraryDocument> & { id: string } }
+  | { type: 'TOGGLE_COLUMN'; payload: string }
+  | { type: 'ADD_COLUMN'; payload: LibraryColumn }
+  | { type: 'REMOVE_COLUMN'; payload: string }
+  | { type: 'SET_SORT'; payload: SortConfig }
+  | { type: 'SET_QUALITY'; payload: QualityTier }
+  | { type: 'SET_SEARCH'; payload: string }
+  | { type: 'SELECT_DOCUMENT'; payload: string }
+  | { type: 'DESELECT_DOCUMENT'; payload: string }
+  | { type: 'SELECT_ALL'; payload: boolean }
+  | { type: 'ADD_CHAT_MESSAGE'; payload: LibraryChatMessage }
+  | { type: 'TOGGLE_CHAT'; payload?: boolean }
+  | { type: 'LOAD_MORE'; payload: LibraryDocument[] }
+  | { type: 'SET_LOADING'; payload: boolean }
+  | { type: 'UPDATE_COLUMN_CONTENT'; payload: { documentId: string; columnId: string; content: ColumnContent } }
+  | { type: 'SET_FOLDERS'; payload: LibraryFolder[] }
+  | { type: 'ADD_FOLDER'; payload: LibraryFolder }
+  | { type: 'UPDATE_FOLDER'; payload: Partial<LibraryFolder> & { id: string } }
+  | { type: 'DELETE_FOLDER'; payload: string }
+  | { type: 'SELECT_FOLDER'; payload: FolderSelection }
+  | { type: 'TOGGLE_FOLDER_EXPANDED'; payload: string };
+
+// ============================================================================
+// API Types (for backend integration)
+// ============================================================================
+
+/**
+ * Request to generate column content for a document
+ * TODO: Connect to backend LLM service
+ */
+export interface GenerateColumnRequest {
+  documentId: string;
+  columnId: string;
+  quality: QualityTier;
+}
+
+/**
+ * Response from column generation
+ */
+export interface GenerateColumnResponse {
+  documentId: string;
+  columnId: string;
+  content: ColumnContent;
+}
+
+/**
+ * Request for library chat
+ * TODO: Connect to backend chat service
+ */
+export interface LibraryChatRequest {
+  query: string;
+  /** Optional: limit chat context to specific documents */
+  documentIds?: string[];
+  quality: QualityTier;
+}
+
+/**
+ * Upload document request
+ * TODO: Connect to backend upload service
+ */
+export interface UploadDocumentRequest {
+  file: File;
+  folder?: string;
+}
+
+// ============================================================================
+// Folder API Types
+// ============================================================================
+
+/**
+ * Create folder request
+ */
+export interface CreateFolderRequest {
+  name: string;
+  description?: string;
+  parentId?: string;
+  color?: string;
+}
+
+export interface CreateGroupLibraryRequest {
+  name: string;
+  description?: string;
+  access: GroupLibraryAccess;
+  slug?: string;
+}
+
+/**
+ * Update folder request
+ */
+export interface UpdateFolderRequest {
+  name?: string;
+  description?: string;
+  parentId?: string;
+  color?: string;
+}
+
+/**
+ * Folder API response
+ */
+export interface FolderResponse {
+  id: string;
+  name: string;
+  description?: string;
+  parent_id: string | null;
+  source: 'local' | 'zotero' | 'mendeley';
+  zotero_key?: string;
+  mendeley_key?: string;
+  document_count: number;
+  created_at: string;
+  updated_at?: string;
+  color?: string;
+  order?: number;
+}
+
+/**
+ * Zotero sync status
+ */
+export interface ZoteroSyncStatus {
+  isConnected: boolean;
+  lastSyncAt?: Date;
+  collectionCount?: number;
+  error?: string;
+}

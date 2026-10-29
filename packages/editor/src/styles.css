@@ -1,0 +1,408 @@
+/*
+ * Editor styles. The palette follows the Videmak mockups (videmak-plan/mockups-2026-10-28):
+ * brand blue for primary actions, slate ink, hairline borders. The host can override the
+ * --theme-primary* variables.
+ */
+:root {
+  --theme-primary: #2563eb;
+  --theme-primary-rgb: 37, 99, 235;
+  --theme-primary-dark: #1d4ed8;
+  --theme-primary-light: #60a5fa;
+  --theme-primary-lighter: #eff6ff;
+  --theme-primary-darker: #1e40af;
+  --theme-primary-soft: #eff6ff;
+  --theme-primary-soft-hover: #dbeafe;
+  --theme-primary-tint: #eff6ff;
+  --theme-primary-50: #eff6ff;
+  --theme-primary-100: #dbeafe;
+  --theme-primary-border: #dbeafe;
+  --theme-primary-ring: rgba(37, 99, 235, 0.18);
+  --theme-app-text: #ffffff;
+  --theme-app-text-rgb: 255, 255, 255;
+  --theme-sidebar: #f8fafc;
+  --theme-sidebar-rgb: 248, 250, 252;
+  --theme-sidebar-light: #ffffff;
+  --theme-sidebar-dark: #e5e7eb;
+  --theme-sidebar-text: #0f172a;
+  --theme-sidebar-text-rgb: 15, 23, 42;
+  --ve-ink: #0f172a;
+  --ve-ink-2: #334155;
+  --ve-muted: #64748b;
+  --ve-subtle: #94a3b8;
+  --ve-line: #e5e7eb;
+  --ve-line-2: #f1f5f9;
+  --ve-soft: #f8fafc;
+  --ve-serif: var(--font-serif), "Source Serif 4", Georgia, serif;
+}
+
+/* Mantine's global reset (button, input { font: inherit }) is unlayered, so it would beat
+   Tailwind's layered text utilities on every button and input. Hand those back to Tailwind. */
+html button, html input, html textarea, html select {
+  font: revert-layer;
+}
+
+.ai-editor-theme {
+  color: #0f172a;
+  background-color: #ffffff;
+  font-family: var(--font-sans), Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, Segoe UI, sans-serif;
+}
+
+/* Override ALL teal/orange/blue/emerald button colors with theme :-)*/
+.bg-teal-500,
+.bg-teal-600,
+.bg-teal-700,
+.bg-orange-500,
+.bg-orange-600,
+.bg-blue-500,
+.bg-blue-600,
+.bg-blue-700,
+.bg-emerald-500,
+.bg-emerald-600,
+.bg-emerald-700,
+.bg-primary-600,
+.bg-primary-700 {
+  background-color: var(--theme-primary) !important;
+  color: var(--theme-app-text, #ffffff) !important;
+}
+
+.hover\:bg-teal-600:hover,
+.hover\:bg-teal-700:hover,
+.hover\:bg-orange-600:hover,
+.hover\:bg-orange-700:hover,
+.hover\:bg-blue-600:hover,
+.hover\:bg-blue-700:hover,
+.hover\:bg-emerald-600:hover,
+.hover\:bg-emerald-700:hover,
+.hover\:bg-primary-700:hover {
+  background-color: var(--theme-primary-dark) !important;
+  color: var(--theme-app-text, #ffffff) !important;
+}
+
+/* Disabled states */
+.disabled\:bg-emerald-400:disabled,
+.disabled\:bg-teal-400:disabled,
+.disabled\:bg-blue-400:disabled,
+.disabled\:bg-orange-400:disabled {
+  background-color: var(--theme-primary-light) !important;
+  opacity: 0.6 !important;
+}
+
+/* Icons inside theme buttons should use app text color */
+.bg-teal-500 svg,
+.bg-teal-600 svg,
+.bg-orange-500 svg,
+.bg-blue-600 svg,
+.bg-emerald-600 svg,
+.bg-primary-600 svg {
+  color: var(--theme-app-text, #ffffff) !important;
+  stroke: var(--theme-app-text, #ffffff) !important;
+}
+
+/* Ensure button text uses app text color */
+.bg-teal-500 *,
+.bg-teal-600 *,
+.bg-orange-500 *,
+.bg-blue-600 *,
+.bg-emerald-600 *,
+.bg-primary-600 * {
+  color: inherit !important;
+}
+
+/* Override white text on theme buttons */
+.bg-teal-600.text-white,
+.bg-orange-500.text-white,
+.bg-blue-600.text-white,
+.bg-emerald-600.text-white {
+  color: var(--theme-app-text, #ffffff) !important;
+}
+
+/* AI Editor adjustments */
+.ai-editor-blocknote .bn-inline-content:has(> .ProseMirror-trailingBreak):before {
+  display: none !important;
+}
+
+/* Docs-like gutter between pages (uses BlockNote pageBreak block) */
+.ai-editor-blocknote .bn-block-content[data-content-type="pageBreak"] > div {
+  width: auto !important;
+  height: 40px !important;
+  margin: 24px -1.5rem 28px !important;
+  border: none !important;
+  border-top: 1px solid #e5e7eb !important;
+  background: #f8fafc !important;
+  box-shadow: none !important;
+}
+
+@media (min-width: 640px) {
+  .ai-editor-blocknote .bn-block-content[data-content-type="pageBreak"] > div {
+    margin-left: -96px !important;
+    margin-right: -96px !important;
+  }
+}
+
+.ai-editor-blocknote .bn-block-content[data-content-type="bulletListItem"][data-list-variant="hollow"]::before {
+  content: "◦" !important;
+}
+
+.ai-editor-blocknote .bn-block-content[data-content-type="bulletListItem"][data-list-variant="diamond"]::before {
+  content: "◆" !important;
+}
+
+.ai-editor-blocknote
+  .bn-block-content[data-content-type="numberedListItem"][data-list-variant="bracket"]::before,
+.ai-editor-blocknote
+  .bn-block-content[data-content-type="numberedListItem"][data-list-variant="roman"]::before {
+  content: attr(data-number-display) !important;
+}
+
+.ai-editor-blocknote .bn-block-content[data-content-type="checkListItem"][data-list-variant="subtasks"] > div > input {
+  accent-color: #2563eb;
+}
+
+/* Text colors with theme */
+.text-teal-500,
+.text-teal-600,
+.text-teal-700,
+.text-orange-500,
+.text-orange-600,
+.text-blue-500,
+.text-blue-600,
+.text-emerald-500,
+.text-emerald-600,
+.text-emerald-700,
+.text-primary-600 {
+  color: var(--theme-primary) !important;
+}
+
+.hover\:text-teal-700:hover,
+.hover\:text-orange-700:hover,
+.hover\:text-blue-700:hover,
+.hover\:text-emerald-600:hover,
+.hover\:text-emerald-700:hover {
+  color: var(--theme-primary-dark) !important;
+}
+
+/* Border colors with theme */
+.border-teal-500,
+.border-teal-600,
+.border-orange-500,
+.border-blue-500,
+.border-blue-600,
+.border-emerald-300,
+.border-emerald-500,
+.border-emerald-600,
+.border-primary-600 {
+  border-color: var(--theme-primary) !important;
+}
+
+/* Lighter border colors */
+.border-emerald-200 {
+  border-color: var(--theme-primary-light) !important;
+}
+
+/* Background light variations */
+.bg-teal-50,
+.bg-teal-100,
+.bg-orange-50,
+.bg-orange-100,
+.bg-blue-50,
+.bg-blue-100,
+.bg-emerald-50,
+.bg-emerald-100 {
+  background-color: var(--theme-primary-lighter) !important;
+}
+
+/* Ring colors for focus states */
+.ring-teal-500,
+.ring-blue-500,
+.ring-orange-500,
+.ring-emerald-500,
+.focus\:ring-teal-500:focus,
+.focus\:ring-blue-500:focus,
+.focus\:ring-orange-500:focus,
+.focus\:ring-emerald-500:focus {
+  --tw-ring-color: var(--theme-primary) !important;
+}
+
+/* Gradient backgrounds */
+.bg-gradient-to-r.from-teal-600,
+.bg-gradient-to-r.from-primary-600,
+.from-teal-600,
+.from-primary-600,
+.from-blue-600,
+.from-orange-500 {
+  --tw-gradient-from: var(--theme-primary) var(--tw-gradient-from-position) !important;
+  --tw-gradient-to: rgb(var(--theme-primary-rgb) / 0) var(--tw-gradient-to-position) !important;
+  --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-to) !important;
+}
+
+.to-teal-600,
+.to-blue-700,
+.to-primary-700,
+.to-orange-600 {
+  --tw-gradient-to: var(--theme-primary-dark) var(--tw-gradient-to-position) !important;
+}
+
+/* Citations in the document: blue text, as in the mockups (no chip). */
+.citation-token {
+  display: inline;
+  vertical-align: baseline;
+  padding: 0 1px;
+  border: 0;
+  border-radius: 4px;
+  background: transparent;
+  color: var(--theme-primary, #2563eb);
+  font-size: inherit;
+  font-weight: 500;
+  cursor: pointer;
+  user-select: none;
+}
+.citation-token:hover {
+  background-color: #eff6ff;
+}
+
+/* Footnote texts of a pageless document: printed at the end, never shown on screen. */
+.ce-print-notes { display: none; }
+
+/* ============================================
+   AI EDITOR - Print / PDF styles
+   ============================================ */
+@media print {
+  .ce-print-notes {
+    display: block;
+    margin: 28px 0 0;
+    padding: 10px 0 0 22px;
+    border-top: 1px solid #cbd5e1;
+    font-size: 10pt;
+    line-height: 1.4;
+    color: #334155;
+  }
+
+  @page {
+    size: A4;
+    margin: 0.75in 1in;
+  }
+
+  html, body {
+    height: auto !important;
+    overflow: visible !important;
+    background: white !important;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+
+  /* Hide all chrome: nav, toolbars, sidebar, floating UI */
+  nav,
+  header,
+  aside,
+  .ai-editor-print-hidden,
+  .ai-ghost-block,
+  .bn-side-menu,
+  .bn-drag-handle-menu,
+  .bn-formatting-toolbar,
+  .bn-slash-menu,
+  [data-review-card],
+  [class*="HamburgerButton"],
+  [class*="NavigationSidebar"],
+  [class*="GoogleDocsHeader"],
+  [class*="GoogleDocsOutlineSidebar"],
+  [class*="OutlineSidebar"],
+  [class*="CommentsPanel"] {
+    display: none !important;
+  }
+
+  /* Remove layout constraints */
+  main,
+  main > div,
+  section,
+  section > div {
+    margin: 0 !important;
+    padding: 0 !important;
+    height: auto !important;
+    min-height: 0 !important;
+    overflow: visible !important;
+    display: block !important;
+    position: static !important;
+    background: white !important;
+  }
+
+  /* Remove paper-like shadow and border from document surface */
+  main div[class*="mx-auto"][class*="max-w-"] {
+    max-width: none !important;
+    border: none !important;
+    box-shadow: none !important;
+    padding: 0 !important;
+    margin: 0 !important;
+  }
+
+  /* Ensure editor content fills the page */
+  .ProseMirror {
+    padding: 0 !important;
+    margin: 0 !important;
+    max-width: none !important;
+    font-size: 12pt !important;
+    line-height: 1.5 !important;
+    color: #000 !important;
+  }
+
+  /* Reset zoom on document surface */
+  div[style*="zoom"] {
+    zoom: 1 !important;
+  }
+
+  /* Typography */
+  .ProseMirror h1 { font-size: 20pt !important; margin: 12pt 0 6pt !important; page-break-after: avoid; }
+  .ProseMirror h2 { font-size: 16pt !important; margin: 10pt 0 4pt !important; page-break-after: avoid; }
+  .ProseMirror h3 { font-size: 13pt !important; margin: 8pt 0 4pt !important; page-break-after: avoid; }
+
+  /* Images and figures */
+  .ProseMirror img {
+    max-width: 100% !important;
+    page-break-inside: avoid;
+    break-inside: avoid;
+  }
+
+  /* Tables */
+  .ProseMirror table {
+    page-break-inside: auto;
+    width: 100% !important;
+  }
+  .ProseMirror tr {
+    page-break-inside: avoid;
+    break-inside: avoid;
+  }
+
+  /* KaTeX formulas */
+  .katex { font-size: 1em !important; }
+  .katex-display { margin: 0.5em 0 !important; page-break-inside: avoid; }
+
+  /* Lists */
+  .ProseMirror ul, .ProseMirror ol {
+    page-break-inside: auto;
+  }
+  .ProseMirror li {
+    page-break-inside: avoid;
+    break-inside: avoid;
+  }
+
+  /* Links: show URL */
+  .ProseMirror a[href]::after {
+    content: none;
+  }
+  .ProseMirror a {
+    color: #000 !important;
+    text-decoration: underline !important;
+  }
+
+  /* Code blocks */
+  .ProseMirror pre,
+  .ProseMirror code {
+    page-break-inside: avoid;
+    break-inside: avoid;
+  }
+}
+
+/* Editor toolbar: tools that wrap past the first line wait behind the ⋮ button. */
+.ve-toolbar-row:not([data-expanded]) > [data-wrapped] {
+  visibility: hidden;
+  pointer-events: none;
+}

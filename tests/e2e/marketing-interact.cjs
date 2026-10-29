@@ -1,0 +1,30 @@
+// Phone menu sheet + FAQ toggle + pricing toggle checks. BASE=http://localhost:8080 node marketing-interact.cjs
+const { chromium, devices } = require('playwright');
+const BASE = process.env.BASE || 'http://localhost:8080';
+(async () => {
+  const browser = await chromium.launch();
+  const context = await browser.newContext(devices['iPhone 13']);
+  const page = await context.newPage();
+  const errors = [];
+  page.on('pageerror', (e) => errors.push(e.message));
+  page.on('console', (m) => m.type() === 'error' && errors.push(m.text()));
+  await page.goto(BASE + '/', { waitUntil: 'networkidle' });
+  await page.screenshot({ path: '/shots/r1-home-phone-top.png' });
+  await page.getByRole('button', { name: 'Open menu' }).click();
+  await page.waitForTimeout(400);
+  await page.screenshot({ path: '/shots/r1-phone-menu.png' });
+  console.log('menu open:', await page.locator('dialog#site-menu').evaluate((d) => d.open));
+  await page.keyboard.press('Escape');
+  await page.waitForTimeout(300);
+  console.log('menu closed:', !(await page.locator('dialog#site-menu').evaluate((d) => d.open)));
+  const faq = page.locator('details').first();
+  await faq.locator('summary').click();
+  console.log('faq toggled closed:', !(await faq.evaluate((d) => d.open)));
+  await page.goto(BASE + '/pricing', { waitUntil: 'networkidle' });
+  await page.getByRole('button', { name: /Monthly/ }).click();
+  console.log('pro price monthly:', (await page.locator('#plan-pro').locator('xpath=..').innerText()).match(/\$\d+/)[0]);
+  await page.locator('table').scrollIntoViewIfNeeded();
+  await page.screenshot({ path: '/shots/r1-pricing-phone-table.png' });
+  console.log('errors:', errors);
+  await browser.close();
+})();

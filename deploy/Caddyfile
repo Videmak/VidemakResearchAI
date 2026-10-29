@@ -1,0 +1,9 @@
+# One address for everything: the API, real-time sync and the Videmak Cloud gateway go to the
+# server, every other path to the web app. SITE_ADDRESS is ":8080" (plain HTTP, put your own
+# proxy in front) or your domain, e.g. "write.example.edu" (Caddy then gets an HTTPS certificate).
+{$SITE_ADDRESS::8080} {
+	encode zstd gzip
+	@backend path /api/* /collab /collab/* /v1/*
+	reverse_proxy @backend server:4000
+	reverse_proxy web:3000
+}

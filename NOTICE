@@ -1,0 +1,34 @@
+Videmak includes third-party software under its own licences, among them:
+
+- BlockNote (@blocknote/*) — MPL-2.0
+- citeproc-js (citeproc), via citation-js — CPAL-1.0 or AGPL-1.0, at the user's option.
+  "Citation formatting powered by citeproc-js (https://github.com/Juris-M/citeproc-js)."
+- Mantine, Tiptap/ProseMirror, Yjs, KaTeX, docx, Hocuspocus, Hono — MIT
+- mammoth — BSD-2-Clause
+- DOMPurify (dompurify), via isomorphic-dompurify (MIT) — MPL-2.0 or Apache-2.0, at the user's option
+- JSZip (jszip), via mammoth — MIT or GPL-3.0-or-later, at the user's option
+- react-icons — MIT; the Lucide icons it provides (react-icons/lu) — ISC
+- Citation Style Language styles — CC BY-SA 3.0
+
+The converter (workers/convert) uses these Python packages:
+
+- FastAPI, python-docx, latex2mathml, Pydantic (pydantic, pydantic-core), AnyIO, h11,
+  annotated-types, annotated-doc, typing-inspection — MIT
+- Uvicorn, Starlette, HTTPX, httpcore, lxml, Click, idna — BSD-3-Clause
+- python-multipart, opentelemetry-api — Apache-2.0
+- Pillow — MIT-CMU (HPND)
+- pypdfium2 — Apache-2.0 or BSD-3-Clause, at the user's option; the PDFium binary it ships is
+  BSD-3-Clause and Apache-2.0, with its bundled libraries under their own licences
+- typing_extensions — PSF-2.0
+- certifi — MPL-2.0
+- Test-only (in the image when built with WITH_TESTS=1, the default): pytest, pluggy,
+  iniconfig — MIT; packaging — Apache-2.0 or BSD-2-Clause; Pygments — BSD-2-Clause
+
+The converter's Docker image also installs these Debian packages:
+
+- LibreOffice (Writer, Draw and Math, without a GUI) — MPL-2.0, with some parts under other
+  licences (see /usr/share/doc/libreoffice-common/copyright in the image)
+- Liberation, Carlito and Caladea fonts — SIL Open Font License 1.1
+- DejaVu fonts — Bitstream Vera Fonts licence (DejaVu's changes are public domain)
+
+The "Videmak" name and logo are trademarks and are not licensed under MIT.

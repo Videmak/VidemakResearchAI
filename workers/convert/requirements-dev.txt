@@ -1,0 +1,6 @@
+# Test-only dependencies (installed in the image when built with WITH_TESTS=1, the default).
+pytest==9.2.0
+iniconfig==2.3.1
+packaging==26.3
+pluggy==1.7.0
+Pygments==2.21.0

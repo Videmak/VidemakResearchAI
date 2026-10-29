@@ -1,0 +1,101 @@
+# Videmak on one server: the web app, the API and real-time server, the Word/PDF/LaTeX converter,
+# PostgreSQL (with pgvector) and Valkey, behind one Caddy router.
+#
+#   bash deploy/setup.sh        # writes .env with fresh secrets (once)
+#   docker compose up -d        # then open http://localhost:3000
+#
+# HTTPS on your own domain: set SITE_ADDRESS in .env, then add deploy/compose.https.yml (see README).
+name: videmak
+
+x-restart: &restart
+  restart: unless-stopped
+
+services:
+  db:
+    <<: *restart
+    image: pgvector/pgvector:0.8.1-pg17
+    environment:
+      POSTGRES_USER: videmak
+      POSTGRES_DB: videmak
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Run deploy/setup.sh or set POSTGRES_PASSWORD in .env}
+    volumes:
+      - db:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U videmak -d videmak"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+
+  valkey:
+    <<: *restart
+    image: valkey/valkey:8.1-alpine
+    command: ["valkey-server", "--save", "60", "1", "--appendonly", "no"]
+    volumes:
+      - valkey:/data
+
+  convert:
+    <<: *restart
+    build:
+      context: ./workers/convert
+      args:
+        WITH_TESTS: "0"
+    image: videmak-convert:local
+
+  server:
+    <<: *restart
+    build:
+      context: .
+      dockerfile: deploy/Dockerfile.server
+    image: videmak-server:local
+    env_file: .env
+    environment:
+      PORT: "4000"
+      DATABASE_URL: postgres://videmak:${POSTGRES_PASSWORD}@db:5432/videmak
+      VALKEY_URL: redis://valkey:6379
+      CONVERT_URL: http://convert:4100
+      INTERNAL_URL: http://server:4000
+      FILES_DIR: /data/files
+    volumes:
+      - files:/data/files
+    depends_on:
+      db:
+        condition: service_healthy
+      valkey:
+        condition: service_started
+      convert:
+        condition: service_started
+
+  web:
+    <<: *restart
+    build:
+      context: .
+      dockerfile: deploy/Dockerfile.web
+      args:
+        NEXT_PUBLIC_SITE_URL: ${PUBLIC_URL:-http://localhost:3000}
+    image: videmak-web:local
+    environment:
+      VIDEMAK_SERVER_URL: http://server:4000
+      PUBLIC_API_URL: ${PUBLIC_API_URL:-https://api.videmak.net}
+      GITHUB_URL: ${GITHUB_URL:-}
+    depends_on:
+      - server
+
+  router:
+    <<: *restart
+    image: caddy:2.10-alpine
+    environment:
+      SITE_ADDRESS: ${SITE_ADDRESS:-:8080}
+    ports:
+      - "${HTTP_PORT:-3000}:8080"
+    volumes:
+      - ./deploy/Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy:/data
+    depends_on:
+      - server
+      - web
+
+volumes:
+  db:
+  valkey:
+  files:
+  caddy:
