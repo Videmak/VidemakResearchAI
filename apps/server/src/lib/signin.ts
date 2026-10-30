@@ -103,7 +103,12 @@ const jwks = (provider: Provider) => {
   return jwksCache.get(provider)!;
 };
 
-export const redirectUri = (provider: Provider, s: EffectiveSettings = settings()) => `${s.publicUrl.replace(/\/+$/, '')}/api/auth/oauth/${provider}/callback`;
+/**
+ * Where the provider sends people back. GOOGLE_REDIRECT_URI keeps an address already registered
+ * with Google (a proxy must then send that path to /api/auth/oauth/google/callback).
+ */
+export const redirectUri = (provider: Provider, s: EffectiveSettings = settings()) =>
+  (provider === 'google' && s.googleRedirectUri) || `${s.publicUrl.replace(/\/+$/, '')}/api/auth/oauth/${provider}/callback`;
 
 function clientId(provider: Provider, s: EffectiveSettings) {
   return provider === 'google' ? s.googleClientId : provider === 'microsoft' ? s.microsoftClientId : s.appleServicesId;

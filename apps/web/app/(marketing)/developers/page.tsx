@@ -8,9 +8,10 @@ export const dynamic = 'force-dynamic';
 
 const serverUrl = process.env.VIDEMAK_SERVER_URL || 'http://localhost:4000';
 /** Where Videmak Cloud answers, and the source code (shown only once it is public). */
-const apiUrl = (process.env.PUBLIC_API_URL || 'https://api.videmak.net').replace(/\/+$/, '');
+const apiUrl = (process.env.PUBLIC_API_URL || 'https://new.videmak.net').replace(/\/+$/, '');
 const githubUrl = process.env.GITHUB_URL || '';
-const contact = 'mailto:hello@videmak.net?subject=Videmak%20for%20our%20institution';
+const contactEmail = process.env.SUPPORT_EMAIL || process.env.NEXT_PUBLIC_SUPPORT_EMAIL || 'admin@videmak.org';
+const contact = `mailto:${contactEmail}?subject=Videmak%20for%20our%20institution`;
 
 type Prices = {
   services: { id: string; label: string; unit: string; credits: number; free: boolean }[];

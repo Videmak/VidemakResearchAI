@@ -9,10 +9,10 @@ const serif = Source_Serif_4({ subsets: ['latin'], variable: '--font-serif', dis
 
 export const metadata: Metadata = {
   metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL || 'https://videmak.net'),
-  title: { default: 'Videmak — the AI editor for academic writing', template: '%s · Videmak' },
+  title: { default: 'Videmak Research AI — the AI editor for academic writing', template: '%s · Videmak Research AI' },
   description:
     'Write your paper faster, with citations you can trust. Autocomplete with real references, 250M+ papers, AI review, Word and LaTeX export.',
-  applicationName: 'Videmak',
+  applicationName: 'Videmak Research AI',
   manifest: '/manifest.webmanifest',
 };
 

@@ -22,7 +22,12 @@ export const WEBHOOK_EVENTS = [
 /** The plan subscription an event is about, if any (plan subscriptions carry videmak_kind=plan). */
 async function planSubscriptionOf(event: Stripe.Event): Promise<string | null> {
   const object = event.data.object as any;
-  if (event.type.startsWith('customer.subscription.')) return object.metadata?.videmak_kind === 'plan' ? object.id : null;
+  if (event.type.startsWith('customer.subscription.')) {
+    if (object.metadata?.videmak_kind === 'plan') return object.id;
+    // Subscriptions carried over from the previous app have no Videmak metadata: known by their id.
+    const [account] = await sql`select id from accounts where plan_subscription_id = ${object.id}`;
+    return account ? object.id : null;
+  }
   if (event.type === 'checkout.session.completed') return object.mode === 'subscription' ? customerOf(object.subscription) : null;
   if (event.type.startsWith('invoice.')) {
     const subscription = invoiceSubscription(object);

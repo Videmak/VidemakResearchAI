@@ -1,6 +1,6 @@
 # Videmak Cloud API
 
-One key for scholarly papers, full text, research tools, AI, peer review and document conversion. Base URL `https://api.videmak.net/v1`. Every request sends the key as a Bearer token:
+One key for scholarly papers, full text, research tools, AI, peer review and document conversion. Base URL `https://new.videmak.net/v1`. Every request sends the key as a Bearer token:
 
 ```
 Authorization: Bearer vm_live_…
@@ -49,9 +49,9 @@ Scholarly metadata in the [OpenAlex](https://docs.openalex.org) shape, from Cite
 
 ```bash
 curl -H "Authorization: Bearer $VIDEMAK_API_KEY" \
-  "https://api.videmak.net/v1/oa/works?search=sleep%20memory&filter=publication_year:>2015&per_page=5"
+  "https://new.videmak.net/v1/oa/works?search=sleep%20memory&filter=publication_year:>2015&per_page=5"
 
-curl -H "Authorization: Bearer $VIDEMAK_API_KEY" "https://api.videmak.net/v1/oa/works/doi:10.1038/nrn2762"
+curl -H "Authorization: Bearer $VIDEMAK_API_KEY" "https://new.videmak.net/v1/oa/works/doi:10.1038/nrn2762"
 ```
 
 `POST /v1/oa/works/bulk` with `{"ids": ["W2741809807", "doi:10.7717/peerj.4375"]}` looks up several works in one request.
@@ -95,7 +95,7 @@ Fourteen tools for literature work, as JSON or over MCP. **1 credit per call, fr
 ```bash
 curl -X POST -H "Authorization: Bearer $VIDEMAK_API_KEY" -H "Content-Type: application/json" \
   -d '{"identifiers": ["10.1038/nrn2762", "PMID:23589831"]}' \
-  "https://api.videmak.net/v1/research/tools/validate_citations"
+  "https://new.videmak.net/v1/research/tools/validate_citations"
 ```
 
 The answer has `content`, often `structuredContent`, and `isError`: check `isError` even on HTTP 200.
@@ -106,7 +106,7 @@ The answer has `content`, often `structuredContent`, and `isError`: check `isErr
 {
   "mcpServers": {
     "videmak-research": {
-      "url": "https://api.videmak.net/v1/mcp",
+      "url": "https://new.videmak.net/v1/mcp",
       "headers": { "Authorization": "Bearer YOUR_VIDEMAK_API_KEY" }
     }
   }
@@ -122,7 +122,7 @@ OpenAI-compatible chat completions on DeepSeek, streaming included. Models: `dee
 ```python
 from openai import OpenAI
 
-client = OpenAI(base_url="https://api.videmak.net/v1", api_key=VIDEMAK_API_KEY)
+client = OpenAI(base_url="https://new.videmak.net/v1", api_key=VIDEMAK_API_KEY)
 reply = client.chat.completions.create(model="deepseek-chat", messages=[{"role": "user", "content": "Hello"}])
 ```
 

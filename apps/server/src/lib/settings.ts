@@ -49,7 +49,7 @@ export const SETTING_FIELDS = [
   { key: 's3UrlStyle', group: 'storage', label: 'Bucket address', secret: false, options: ['virtual', 'path'], labels: { virtual: 'In the host name', path: 'In the path (MinIO)' }, showWhen: { storageProvider: ['s3'] } },
   { key: 's3Prefix', group: 'storage', label: 'Folder in the bucket (optional)', secret: false, placeholder: 'videmak/', showWhen: { storageProvider: ['wasabi', 's3'] } },
   { key: 'mailProvider', group: 'email', label: 'Send emails with', secret: false, options: ['', 'smtp', 'resend'], labels: { '': 'Off', smtp: 'SMTP', resend: 'Resend' } },
-  { key: 'mailFrom', group: 'email', label: 'From', secret: false, placeholder: 'Videmak <hello@videmak.net>', showWhen: { mailProvider: ['smtp', 'resend'] } },
+  { key: 'mailFrom', group: 'email', label: 'From', secret: false, placeholder: 'Videmak <hello@example.com>', showWhen: { mailProvider: ['smtp', 'resend'] } },
   { key: 'mailReplyTo', group: 'email', label: 'Reply-to (optional)', secret: false, placeholder: 'support@videmak.net', showWhen: { mailProvider: ['smtp', 'resend'] } },
   { key: 'smtpHost', group: 'email', label: 'SMTP host', secret: false, placeholder: 'smtp.example.com', showWhen: { mailProvider: ['smtp'] } },
   { key: 'smtpPort', group: 'email', label: 'Port', secret: false, placeholder: '587', showWhen: { mailProvider: ['smtp'] } },

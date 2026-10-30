@@ -2,6 +2,14 @@ import Link from 'next/link';
 import { Logo } from '@/components/Logo';
 import { container, focusRing } from './styles';
 
+/** Who runs this site, set when the web app is built (NEXT_PUBLIC_COMPANY_*); empty parts are left out. */
+const COMPANY = {
+  name: process.env.NEXT_PUBLIC_COMPANY_NAME || 'Videmak',
+  address: process.env.NEXT_PUBLIC_COMPANY_ADDRESS || '',
+  phone: process.env.NEXT_PUBLIC_COMPANY_PHONE || '',
+  email: process.env.NEXT_PUBLIC_SUPPORT_EMAIL || '',
+};
+
 // Only pages that exist. Privacy and Terms come back once their text is written (no page yet).
 const COLUMNS = [
   {
@@ -57,7 +65,12 @@ export function SiteFooter() {
         </div>
       </div>
       <div className={container}>
-        <p className="border-t border-line-2 py-6 text-[12.5px] text-subtle">© {new Date().getFullYear()} Videmak</p>
+        <div className="flex flex-col gap-1.5 border-t border-line-2 py-6 text-[12.5px] text-subtle md:flex-row md:flex-wrap md:gap-x-4">
+          <span>© {new Date().getFullYear()} {COMPANY.name}</span>
+          {COMPANY.address && <span>{COMPANY.address}</span>}
+          {COMPANY.phone && <a href={`tel:${COMPANY.phone.replace(/[^+\d]/g, '')}`} className="hover:text-ink">{COMPANY.phone}</a>}
+          {COMPANY.email && <a href={`mailto:${COMPANY.email}`} className="hover:text-ink">{COMPANY.email}</a>}
+        </div>
       </div>
     </footer>
   );

@@ -1,8 +1,8 @@
 # Security
 
-Please report vulnerabilities privately to **hello@videmak.net** with "Security" in the subject, not in a public issue. Include what you found, how to reproduce it and what an attacker could do with it. We will reply and tell you when it is fixed.
+Please report vulnerabilities privately to **admin@videmak.org** with "Security" in the subject, not in a public issue. Include what you found, how to reproduce it and what an attacker could do with it. We will reply and tell you when it is fixed.
 
-This covers this repository and the services at videmak.net and api.videmak.net. Please don't access other people's data, run load tests or use social engineering while testing.
+This covers this repository and the services at videmak.net and new.videmak.net (the API). Please don't access other people's data, run load tests or use social engineering while testing.
 
 ## Running your own copy safely
 

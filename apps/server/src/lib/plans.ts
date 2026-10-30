@@ -2,6 +2,7 @@ import type { Context } from 'hono';
 import { createMiddleware } from 'hono/factory';
 import { HTTPException } from 'hono/http-exception';
 import { sql } from '../db.js';
+import { env } from '../env.js';
 
 /**
  * Plans and what each one allows. Plans live in the database (Admin › Plans); the limit KEYS
@@ -117,7 +118,7 @@ export const DEFAULT_PLANS: (Omit<PlanRow, 'stripe_product_id' | 'stripe_monthly
   },
   {
     id: 'team', name: 'Team', tagline: 'For labs, departments and writing groups', sort_order: 3, is_default: false, is_public: true, featured: false,
-    checkout: 'contact', contact_url: 'mailto:hello@videmak.net?subject=Videmak%20Team', monthly_cents: 0, yearly_cents: 0, currency: 'usd', trial_days: 0,
+    checkout: 'contact', contact_url: env.supportEmail ? `mailto:${env.supportEmail}?subject=Videmak%20Team` : null, monthly_cents: 0, yearly_cents: 0, currency: 'usd', trial_days: 0,
     limits: UNLIMITED_LIMITS,
     features: [
       { label: 'Everything in Pro for each member', included: true },
@@ -170,14 +171,17 @@ export type AccountPlan = {
 /** Subscriptions in these states keep their plan (past_due: Stripe is still retrying the card). */
 export const LIVE_STATUSES = ['active', 'trialing', 'past_due'];
 
-/** The plan an account has right now: a live subscription, a plan an admin gave, or the default. */
+/** The plan an account has right now: a live subscription, a plan an admin gave, a carried-over plan, or the default. */
 export async function effectivePlan(accountId: string): Promise<{ plan: PlanRow; limits: Limits; account: AccountPlan }> {
   const { plans } = await loadPlans();
   const [account] = await sql<AccountPlan[]>`
     select plan as plan_id, plan_status, plan_source, plan_interval, plan_period_end, plan_cancel_at_period_end, plan_subscription_id
     from accounts where id = ${accountId}`;
   const fallback = plans.find((plan) => plan.is_default) ?? plans[0];
-  const chosen = account && (account.plan_source === 'admin' || (account.plan_source === 'stripe' && LIVE_STATUSES.includes(account.plan_status)))
+  // 'legacy': a plan carried over from a previous app without a Stripe subscription, active until its end date.
+  const legacyActive = account?.plan_source === 'legacy' && account.plan_status === 'active'
+    && (!account.plan_period_end || account.plan_period_end.getTime() > Date.now());
+  const chosen = account && (account.plan_source === 'admin' || legacyActive || (account.plan_source === 'stripe' && LIVE_STATUSES.includes(account.plan_status)))
     ? plans.find((plan) => plan.id === account.plan_id)
     : undefined;
   const plan = chosen ?? fallback;

@@ -2,7 +2,8 @@ import { Hono } from 'hono';
 import { HTTPException } from 'hono/http-exception';
 import { z } from 'zod';
 import { sql } from '../db.js';
-import { hashPassword, verifyPassword, signSession, requireUser, type AppVariables, type AuthUser } from '../auth.js';
+import { env } from '../env.js';
+import { hashPassword, isImportedHash, verifyPassword, signSession, requireUser, type AppVariables, type AuthUser } from '../auth.js';
 import { rateLimit } from '../lib/rateLimit.js';
 import { methodsFor } from '../lib/signin.js';
 import { createUser, publicUser, signedIn, syncAdmin } from '../lib/users.js';
@@ -48,10 +49,21 @@ export function authRoutes() {
     const parsed = loginBody.safeParse(body);
     if (!parsed.success) throw new HTTPException(422, { message: 'Enter your email and password.' });
     await requireHuman(c, body?.turnstile_token);
-    const [row] = await sql<(AuthUser & { password_hash: string | null; disabled_at: Date | null })[]>`
-      select id, email, full_name, account_id, is_admin, password_hash, disabled_at from users where email = ${parsed.data.email}`;
+    const [row] = await sql<(AuthUser & { password_hash: string | null; disabled_at: Date | null; legacy_id: string | null; legacy_reset_sent_at: Date | null })[]>`
+      select id, email, full_name, account_id, is_admin, password_hash, disabled_at, legacy_id, legacy_reset_sent_at from users where email = ${parsed.data.email}`;
     const ok = row?.password_hash && !row.disabled_at && (await verifyPassword(row.password_hash, parsed.data.password));
+    if (row && !ok && !row.disabled_at && row.legacy_id && mailReady() && (!row.password_hash || isImportedHash(row.password_hash))) {
+      // Moved from the previous app and the old password did not work: send a link to set a new one (once an hour).
+      const recent = row.legacy_reset_sent_at && Date.now() - row.legacy_reset_sent_at.getTime() < 3600_000;
+      if (!recent) {
+        await sql`update users set legacy_reset_sent_at = now() where id = ${row.id}`;
+        await sendPasswordReset(row).catch((error) => console.error(`legacy reset email to user ${row.id} failed: ${(error as Error).message}`));
+      }
+      throw new HTTPException(401, { message: `Videmak has moved to a new app. We emailed ${row.email} a link to set your password.` });
+    }
     if (!row || !ok) throw new HTTPException(401, { message: 'That email and password do not match.' });
+    // An imported account's old password works once more and is stored the new way from now on.
+    if (isImportedHash(row.password_hash!)) await sql`update users set password_hash = ${await hashPassword(parsed.data.password)} where id = ${row.id}`;
     const user = await signedIn({ id: row.id, email: row.email, full_name: row.full_name, account_id: row.account_id, is_admin: row.is_admin });
     return c.json({ token: await signSession(user), user: await publicUser(user) });
   });
@@ -110,6 +122,12 @@ export function authRoutes() {
   });
 
   app.get('/me', requireUser, async (c) => c.json(await publicUser(await syncAdmin(c.get('user')!))));
+
+  /** People moved from the previous app: their old work is archived and can be requested by email. */
+  app.get('/me/archive', requireUser, async (c) => {
+    const [row] = await sql<{ legacy_id: string | null }[]>`select legacy_id from users where id = ${c.get('user')!.id}`;
+    return c.json({ archived: Boolean(row?.legacy_id), request_email: env.supportEmail || null });
+  });
 
   return app;
 }

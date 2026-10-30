@@ -72,7 +72,9 @@ const priceFor = (plan: PlanRow, interval: Interval) => (interval === 'year' ? p
 export async function startPlanPurchase(stripe: Stripe, accountId: string, planId: string, interval: Interval) {
   const { plans } = await loadPlans();
   const plan = plans.find((item) => item.id === planId);
-  if (!plan || plan.checkout !== 'self_serve' || plan.is_default) throw new Error('This plan cannot be bought online.');
+  // Hidden plans (carried over from the previous app) stay with the people already on them.
+  const [current] = await sql<{ plan: string | null }[]>`select plan from accounts where id = ${accountId}`;
+  if (!plan || plan.checkout !== 'self_serve' || plan.is_default || (!plan.is_public && current?.plan !== plan.id)) throw new Error('This plan cannot be bought online.');
   const price = priceFor(plan, interval);
   if (!price) throw new Error(`${plan.name} has no ${interval === 'year' ? 'yearly' : 'monthly'} price yet.`);
   const customer = await ensureCustomer(stripe, accountId);

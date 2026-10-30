@@ -12,7 +12,7 @@ import { FEATURES, FinalCta, STEPS, StartButton, h2, isSignedIn, lead } from '@/
 const DESCRIPTION =
   'Write your paper faster, with citations you can trust. Autocomplete with real references, 250M+ papers, AI review before you submit, and Word and LaTeX export. Free to start.';
 
-export const metadata = pageMetadata({ title: 'Videmak — the AI editor for academic writing', absolute: true, path: '/', description: DESCRIPTION });
+export const metadata = pageMetadata({ title: 'Videmak Research AI — the AI editor for academic writing', absolute: true, path: '/', description: DESCRIPTION });
 
 // Rendered per request (signed-in visitors see Dashboard); the plans themselves are cached for 5 minutes.
 export const dynamic = 'force-dynamic';
@@ -38,7 +38,7 @@ const STRUCTURED_DATA = [
   {
     '@context': 'https://schema.org',
     '@type': 'SoftwareApplication',
-    name: 'Videmak',
+    name: 'Videmak Research AI',
     applicationCategory: 'EducationalApplication',
     operatingSystem: 'Web, iOS, Android, Windows, macOS',
     description: DESCRIPTION,

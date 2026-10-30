@@ -72,10 +72,14 @@ services:
       dockerfile: deploy/Dockerfile.web
       args:
         NEXT_PUBLIC_SITE_URL: ${PUBLIC_URL:-http://localhost:3000}
+        NEXT_PUBLIC_COMPANY_NAME: ${COMPANY_NAME:-}
+        NEXT_PUBLIC_COMPANY_ADDRESS: ${COMPANY_ADDRESS:-}
+        NEXT_PUBLIC_COMPANY_PHONE: ${COMPANY_PHONE:-}
+        NEXT_PUBLIC_SUPPORT_EMAIL: ${SUPPORT_EMAIL:-}
     image: videmak-web:local
     environment:
       VIDEMAK_SERVER_URL: http://server:4000
-      PUBLIC_API_URL: ${PUBLIC_API_URL:-https://api.videmak.net}
+      PUBLIC_API_URL: ${PUBLIC_API_URL:-https://new.videmak.net}
       GITHUB_URL: ${GITHUB_URL:-}
     depends_on:
       - server

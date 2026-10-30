@@ -120,14 +120,14 @@ One key for the services Videmak itself runs on. Use it in a self-hosted Videmak
 
 ```bash
 curl -H "Authorization: Bearer $VIDEMAK_API_KEY" \
-  "https://api.videmak.net/v1/oa/works?search=sleep%20memory&per_page=5"
+  "https://new.videmak.net/v1/oa/works?search=sleep%20memory&per_page=5"
 ```
 
-Every response reports `X-Credits-Charged` and `X-Credits-Balance`; out of credits is `402`. Research tools work in any MCP client (Claude, Cursor…) with `https://api.videmak.net/v1/mcp` and the key as a Bearer header. Full reference: [docs/cloud-api.md](docs/cloud-api.md).
+Every response reports `X-Credits-Charged` and `X-Credits-Balance`; out of credits is `402`. Research tools work in any MCP client (Claude, Cursor…) with `https://new.videmak.net/v1/mcp` and the key as a Bearer header. Full reference: [docs/cloud-api.md](docs/cloud-api.md).
 
 ## For universities and research groups
 
-Videmak for a department or a whole university: hosted by us or on your own servers, set up with you, paid by invoice, with a support agreement. Ask us about single sign-on and links to your course system: [hello@videmak.net](mailto:hello@videmak.net?subject=Videmak%20for%20our%20institution).
+Videmak for a department or a whole university: hosted by us or on your own servers, set up with you, paid by invoice, with a support agreement. Ask us about single sign-on and links to your course system: [admin@videmak.org](mailto:admin@videmak.org?subject=Videmak%20for%20our%20institution).
 
 ---
 

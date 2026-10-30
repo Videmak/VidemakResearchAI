@@ -10,14 +10,17 @@ import { EmailCard } from '@/components/auth/EmailCard';
 import { api, clearSession, useSession } from '@/lib/session';
 
 type Wallet = { balance: number; free_left: number; free_per_day: number };
+type Archive = { archived: boolean; request_email: string | null };
 
 export default function AccountPage() {
   const router = useRouter();
   const { user, loading } = useSession();
   const [wallet, setWallet] = useState<Wallet | null>(null);
+  const [archive, setArchive] = useState<Archive | null>(null);
 
   const load = useCallback(async () => {
     setWallet(await api<Wallet>('/api/cloud/credits').catch(() => null));
+    setArchive(await api<Archive>('/api/auth/me/archive').catch(() => null));
   }, []);
 
   useEffect(() => {
@@ -45,6 +48,21 @@ export default function AccountPage() {
         {user && <SignInMethodsCard />}
 
         {user && <EmailCard />}
+
+        {archive?.archived && (
+          <Card>
+            <CardHeader
+              title="Your work from the old Videmak"
+              description="Documents, chats and files from the previous app are archived safely. Ask us and we will send you a copy."
+              actions={archive.request_email ? (
+                <ButtonLink
+                  href={`mailto:${archive.request_email}?subject=${encodeURIComponent('Copy of my old Videmak data')}&body=${encodeURIComponent(`Please send me a copy of my data from the old Videmak app.\n\nAccount: ${user?.email ?? ''}`)}`}
+                  variant="secondary" size="sm"
+                >Request a copy</ButtonLink>
+              ) : undefined}
+            />
+          </Card>
+        )}
 
         <Card>
           <CardHeader

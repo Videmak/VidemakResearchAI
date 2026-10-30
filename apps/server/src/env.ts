@@ -14,7 +14,7 @@ export const env = {
 
   /** One key turns every slot on; any slot can be overridden below. */
   videmakApiKey: read('VIDEMAK_API_KEY'),
-  videmakApiUrl: read('VIDEMAK_API_URL', 'https://api.videmak.net').replace(/\/+$/, ''),
+  videmakApiUrl: read('VIDEMAK_API_URL', 'https://new.videmak.net').replace(/\/+$/, ''),
 
   llmProvider: read('LLM_PROVIDER'),          // videmak | deepseek | openai | anthropic | openrouter | ollama
   llmApiKey: read('LLM_API_KEY'),
@@ -43,6 +43,7 @@ export const env = {
 
   /** Sign-in methods: 'on'/'off' switches (Admin › Sign-in) and each provider's keys. */
   signinPassword: read('SIGNIN_PASSWORD', 'on'),
+  googleRedirectUri: read('GOOGLE_REDIRECT_URI'),
   signinPasskeys: read('SIGNIN_PASSKEYS', 'on'),
   signinGoogle: read('SIGNIN_GOOGLE', 'on'),
   googleClientId: read('GOOGLE_CLIENT_ID'),

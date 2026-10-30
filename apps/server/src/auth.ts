@@ -1,4 +1,5 @@
 import { hash, verify } from '@node-rs/argon2';
+import bcrypt from 'bcryptjs';
 import { SignJWT, jwtVerify } from 'jose';
 import type { Context, MiddlewareHandler } from 'hono';
 import { HTTPException } from 'hono/http-exception';
@@ -11,7 +12,13 @@ export type AppVariables = { user: AuthUser | null };
 const secret = new TextEncoder().encode(env.jwtSecret);
 
 export const hashPassword = (password: string) => hash(password, { memoryCost: 19456, timeCost: 2, parallelism: 1 });
-export const verifyPassword = (hashed: string, password: string) => verify(hashed, password).catch(() => false);
+/** Bcrypt hashes come from accounts imported from another app (Laravel writes `$2y$`). */
+export const isImportedHash = (hashed: string) => /^\$2[aby]\$\d{2}\$/.test(hashed);
+
+export async function verifyPassword(hashed: string, password: string): Promise<boolean> {
+  if (isImportedHash(hashed)) return bcrypt.compare(password, hashed.replace(/^\$2y\$/, '$2b$')).catch(() => false);
+  return verify(hashed, password).catch(() => false);
+}
 
 export async function signSession(user: Pick<AuthUser, 'id' | 'email'>, ttl = '30d') {
   return new SignJWT({ email: user.email }).setProtectedHeader({ alg: 'HS256' }).setSubject(user.id).setIssuedAt().setExpirationTime(ttl).sign(secret);

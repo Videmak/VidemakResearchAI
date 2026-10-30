@@ -15,7 +15,7 @@ function layout(input: { to: string; subject: string; heading: string; lines: st
   const html = `<!doctype html><html><body style="margin:0;padding:0;background:#f8fafc">
 <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#f8fafc;padding:32px 16px"><tr><td align="center">
 <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:520px">
-<tr><td style="padding:0 4px 18px;font:800 19px/1 ${font};color:#0f172a;letter-spacing:-0.02em"><span style="display:inline-block;width:24px;height:24px;border-radius:7px;background:#2563eb;color:#fff;text-align:center;font:700 14px/24px ${font};margin-right:8px;vertical-align:middle">V</span><span style="vertical-align:middle">videmak</span></td></tr>
+<tr><td style="padding:0 4px 18px;font:800 19px/1 ${font};color:#0f172a;letter-spacing:-0.02em"><span style="display:inline-block;width:24px;height:24px;border-radius:7px;background:#2563eb;color:#fff;text-align:center;font:700 14px/24px ${font};margin-right:8px;vertical-align:middle">V</span><span style="vertical-align:middle">Videmak <span style="color:#2563eb">Research AI</span></span></td></tr>
 <tr><td style="background:#ffffff;border:1px solid #e5e7eb;border-radius:16px;padding:28px 28px 26px">
 <h1 style="margin:0 0 14px;font:700 21px/1.3 ${font};color:#0f172a;letter-spacing:-0.01em">${escape(input.heading)}</h1>
 ${paragraphs}${button}${note}

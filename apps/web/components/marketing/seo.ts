@@ -1,6 +1,6 @@
 import type { Metadata } from 'next';
 
-const SITE_NAME = 'Videmak';
+const SITE_NAME = 'Videmak Research AI';
 
 /** The editor screenshot doubles as the social preview image until a dedicated one exists. */
 const OG_IMAGE = {
@@ -12,7 +12,7 @@ const OG_IMAGE = {
 
 /**
  * Title, description, canonical URL, Open Graph and Twitter tags for a public page.
- * `title` gets the " · Videmak" suffix from the root layout unless `absolute` is set.
+ * `title` gets the " · Videmak Research AI" suffix from the root layout unless `absolute` is set.
  */
 export function pageMetadata({
   title,

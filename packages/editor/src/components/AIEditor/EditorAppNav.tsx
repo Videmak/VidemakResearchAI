@@ -23,10 +23,10 @@ export const NAV_ICONS = {
   help: icon(<><circle cx="12" cy="12" r="9" /><path d="M9.5 9a2.5 2.5 0 1 1 3.5 2.3c-.6.3-1 .9-1 1.6M12 17h.01" /></>),
 };
 
-/** The Videmak wordmark: a blue "V" tile and the name (same as the host app's logo). */
+/** The Videmak Research AI wordmark (same as the host app's logo). */
 export function VidemakLogo({ size = 32 }: { size?: number }) {
   return (
-    <span className="inline-flex items-center gap-2.5 font-extrabold tracking-[-0.02em] text-[#0f172a]" style={{ fontSize: Math.round(size * 0.66) }}>
+    <span className="inline-flex items-center gap-2.5 text-[#0f172a]">
       <span
         className="grid shrink-0 place-items-center rounded-[9px] bg-gradient-to-br from-[#3b82f6] to-[#1d4ed8] shadow-[0_4px_12px_-4px_rgba(37,99,235,.6)]"
         style={{ width: size, height: size }}
@@ -37,7 +37,10 @@ export function VidemakLogo({ size = 32 }: { size?: number }) {
           <path d="M12 19l2.5-5" />
         </svg>
       </span>
-      <span>videmak</span>
+      <span className="flex flex-col leading-none" aria-label="Videmak Research AI">
+        <span className="font-black tracking-[0.01em]" style={{ fontSize: Math.round(size * 0.6) }} aria-hidden="true">VIDEMAK</span>
+        <span className="mt-[2px] border-t-2 border-[#2563eb] pt-[2px] font-bold text-[#2563eb]" style={{ fontSize: Math.round(size * 0.36) }} aria-hidden="true">Research AI</span>
+      </span>
     </span>
   );
 }
