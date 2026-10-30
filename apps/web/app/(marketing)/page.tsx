@@ -1,12 +1,12 @@
 import Image from 'next/image';
 import Link from 'next/link';
-import { LuArrowRight, LuPlus, LuShieldCheck, LuSparkles, LuSquarePen } from 'react-icons/lu';
+import { LuArrowRight, LuBlocks, LuGitPullRequest, LuGithub, LuPlus, LuServer, LuShieldCheck, LuSparkles, LuSquarePen } from 'react-icons/lu';
 import { AutocompleteVisual } from '@/components/marketing/LandingVisuals';
 import { AuthAware } from '@/components/marketing/AuthAware';
 import { PricingTeaser } from '@/components/marketing/PricingTeaser';
 import { loadPublicPlans } from '@/components/marketing/plans';
 import { pageMetadata } from '@/components/marketing/seo';
-import { container, focusRing } from '@/components/marketing/styles';
+import { btnGhost, btnPrimary, container, focusRing, GITHUB_URL } from '@/components/marketing/styles';
 import { FEATURES, FinalCta, STEPS, StartButton, h2, isSignedIn, lead } from '@/components/marketing/landing';
 
 const DESCRIPTION =
@@ -32,6 +32,13 @@ const FAQ = [
   { q: 'Can I cancel any time?', a: 'Yes. Cancel from your account; your plan stays until the end of the period you paid for.' },
   { q: 'Does it work on my phone?', a: 'Yes. Videmak runs in the browser on phones, tablets and computers, with your work synced.' },
   { q: 'Can I write with others?', a: 'Yes. Share a document by link and write together in real time, with comments.' },
+  { q: 'Is Videmak open source?', a: 'Yes. The whole app is on GitHub under the MIT licence: the editor, the server and the converter. Use it here, or run it on your own servers.' },
+];
+
+const OPEN_SOURCE = [
+  { icon: <LuServer className="h-5 w-5" />, title: 'Run it yourself', body: 'One docker compose up, on your laptop or your university’s servers.', href: `${GITHUB_URL}#self-host-in-five-minutes`, link: 'Self-hosting guide' },
+  { icon: <LuBlocks className="h-5 w-5" />, title: 'Build on it', body: 'The editor is a React package. One Videmak Cloud key adds papers, full text and AI.', href: '/developers', link: 'For developers' },
+  { icon: <LuGitPullRequest className="h-5 w-5" />, title: 'Make it better', body: 'Report a bug, suggest a feature or send a pull request.', href: `${GITHUB_URL}/issues`, link: 'Open an issue' },
 ];
 
 const STRUCTURED_DATA = [
@@ -43,6 +50,8 @@ const STRUCTURED_DATA = [
     operatingSystem: 'Web, iOS, Android, Windows, macOS',
     description: DESCRIPTION,
     offers: { '@type': 'Offer', price: '0', priceCurrency: 'USD' },
+    license: 'https://opensource.org/licenses/MIT',
+    sameAs: [GITHUB_URL],
   },
   {
     '@context': 'https://schema.org',
@@ -74,6 +83,9 @@ export default async function LandingPage() {
           </p>
           <div className="mt-7 flex justify-center"><StartButton signedIn={signedIn} /></div>
           <AuthAware initial={signedIn} signedIn={null} signedOut={<p className="mt-3 text-[13px] text-subtle">Free plan · No credit card</p>} />
+          <a href={GITHUB_URL} target="_blank" rel="noreferrer" className={`mt-2 inline-flex items-center gap-1.5 rounded text-[13px] font-medium text-muted transition-colors hover:text-ink ${focusRing}`}>
+            <LuGithub className="h-3.5 w-3.5" aria-hidden="true" /> Open source on GitHub · MIT
+          </a>
           <div className="relative mx-auto mt-12 max-w-[1000px] md:mt-14">
             <div className="overflow-hidden rounded-t-[12px] border border-b-0 border-line bg-white shadow-[0_40px_80px_-44px_rgba(15,23,42,.45)] md:rounded-t-[16px]">
               <div className="flex h-8 items-center gap-[7px] border-b border-line bg-line-2 px-3 md:h-9" aria-hidden="true">
@@ -159,6 +171,31 @@ export default async function LandingPage() {
           ))}
         </ol>
         <Link href="/how-it-works" className={`mt-9 ${more}`}>See how it works <LuArrowRight className="h-4 w-4" aria-hidden="true" /></Link>
+      </section>
+
+      {/* Open source */}
+      <section aria-labelledby="open-title" className={`${container} pt-24 md:pt-32`}>
+        <div className="rounded-[28px] border border-line bg-[#f8fafc] px-5 py-12 text-center sm:px-10 md:py-16">
+          <span className="mx-auto grid size-12 place-items-center rounded-2xl bg-ink text-white" aria-hidden="true"><LuGithub className="h-6 w-6" /></span>
+          <h2 id="open-title" className={`mx-auto mt-5 max-w-[620px] ${h2}`}>Open source, MIT licensed</h2>
+          <p className={`mx-auto mt-4 max-w-[560px] ${lead}`}>The whole app is on GitHub: the editor, the server and the converter. Write here, run it on your own servers, or build it into your product.</p>
+          <ul className="mx-auto mt-10 grid max-w-[920px] gap-4 text-left md:grid-cols-3">
+            {OPEN_SOURCE.map((item) => (
+              <li key={item.title} className="flex flex-col rounded-[20px] border border-line bg-white p-5">
+                <span className="grid size-10 place-items-center rounded-xl bg-brand-50 text-brand" aria-hidden="true">{item.icon}</span>
+                <h3 className="mt-4 text-[16px] font-semibold text-ink">{item.title}</h3>
+                <p className="mt-1 flex-1 text-[14.5px] leading-[1.55] text-muted">{item.body}</p>
+                {item.href.startsWith('http')
+                  ? <a href={item.href} target="_blank" rel="noreferrer" className={`mt-4 ${more}`}>{item.link} <LuArrowRight className="h-4 w-4" aria-hidden="true" /></a>
+                  : <Link href={item.href} className={`mt-4 ${more}`}>{item.link} <LuArrowRight className="h-4 w-4" aria-hidden="true" /></Link>}
+              </li>
+            ))}
+          </ul>
+          <div className="mt-9 flex flex-wrap justify-center gap-3">
+            <a href={GITHUB_URL} target="_blank" rel="noreferrer" className={`${btnPrimary} h-11 px-5 text-[15px]`}><LuGithub className="h-4 w-4" aria-hidden="true" />View on GitHub</a>
+            <Link href="/developers" className={`${btnGhost} h-11 px-5 text-[15px]`}>Developers</Link>
+          </div>
+        </div>
       </section>
 
       <PricingTeaser plans={plans} />

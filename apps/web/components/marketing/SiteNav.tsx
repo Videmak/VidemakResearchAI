@@ -3,11 +3,11 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useEffect, useRef, useState } from 'react';
-import { LuCircleHelp, LuLayers, LuListChecks, LuTag } from 'react-icons/lu';
+import { LuCircleHelp, LuGithub, LuLayers, LuListChecks, LuTag } from 'react-icons/lu';
 import { Logo } from '@/components/Logo';
 import { CloseIcon, MenuIcon } from './icons';
 import { AuthAware } from './AuthAware';
-import { btnGhost, btnPrimary, focusRing } from './styles';
+import { btnGhost, btnPrimary, focusRing, GITHUB_URL } from './styles';
 import { getToken } from '@/lib/session';
 import { openPricing } from '@/lib/billing';
 
@@ -75,6 +75,10 @@ export function SiteNav({ signedIn }: { signedIn: boolean }) {
         })}
       </nav>
       <div className="ml-auto hidden items-center gap-2 md:flex">
+        <a href={GITHUB_URL} target="_blank" rel="noreferrer" title="Videmak is open source (MIT)"
+          className={`mr-1 inline-flex h-9 items-center gap-1.5 rounded-[9px] px-2.5 text-[14px] font-medium text-muted transition-colors hover:bg-soft hover:text-ink ${focusRing}`}>
+          <LuGithub className="size-[18px]" aria-hidden="true" /><span className="hidden lg:inline">GitHub</span><span className="sr-only lg:hidden">Videmak on GitHub</span>
+        </a>
         <AuthAware
           initial={signedIn}
           signedIn={<Link href="/editor" className={`${btnPrimary} h-9 rounded-[9px] px-3.5 text-[14px]`}>Dashboard</Link>}
@@ -146,6 +150,13 @@ export function SiteNav({ signedIn }: { signedIn: boolean }) {
                 </Link>
               );
             })}
+            <a href={GITHUB_URL} target="_blank" rel="noreferrer" onClick={() => setOpen(false)} className={`flex items-center gap-3.5 rounded-[14px] px-2 py-[11px] ${focusRing}`}>
+              <span className="grid size-[42px] shrink-0 place-items-center rounded-xl border border-line bg-white text-ink-2" aria-hidden="true"><LuGithub className="size-[18px]" /></span>
+              <span className="min-w-0">
+                <span className="block text-[16.5px] font-semibold text-ink">Open source</span>
+                <span className="mt-0.5 block text-[13px] text-muted">MIT licensed, on GitHub</span>
+              </span>
+            </a>
           </nav>
           <div className="mt-auto grid gap-2.5 px-4 pt-4 pb-[max(16px,env(safe-area-inset-bottom))]">
             <AuthAware

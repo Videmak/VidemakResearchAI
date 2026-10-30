@@ -18,3 +18,6 @@ export const kicker = 'mb-3 text-sm font-bold uppercase tracking-[.08em] text-br
 /** Big section heading. */
 export const sectionTitle =
   'max-w-[760px] text-balance text-[30px] lg:text-wrap font-bold leading-[1.1] tracking-[-0.03em] text-ink sm:text-[38px] lg:text-[44px]';
+
+/** The public source code (a fork can point this at its own repository when it builds). */
+export const GITHUB_URL = (process.env.NEXT_PUBLIC_GITHUB_URL || 'https://github.com/Videmak/VidemakResearchAI').replace(/\/+$/, '');
