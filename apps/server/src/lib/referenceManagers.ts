@@ -93,7 +93,8 @@ export async function connectZotero(userId: string, apiKey: string) {
 // Zotero sign-in (OAuth 1.0a) when an admin registered an app at zotero.org/oauth/apps; the
 // access token's secret is a normal API key, checked and stored like a pasted one.
 export const zoteroOAuthConfigured = () => Boolean(settings().zoteroClientKey && settings().zoteroClientSecret);
-export const zoteroCallbackUrl = () => `${settings().publicUrl.replace(/\/$/, '')}/api/library/zotero/callback`;
+/** ZOTERO_CALLBACK_URL keeps an address an older app registered (a proxy then sends it to the path below). */
+export const zoteroCallbackUrl = () => settings().zoteroCallbackUrl || `${settings().publicUrl.replace(/\/$/, '')}/api/library/zotero/callback`;
 const oauthEncode = (value: string) => encodeURIComponent(value).replace(/[!'()*]/g, (char) => `%${char.charCodeAt(0).toString(16).toUpperCase()}`);
 const pendingZotero = new Map<string, { userId: string; secret: string; next: string; at: number }>();
 

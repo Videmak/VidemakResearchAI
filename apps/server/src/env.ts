@@ -47,6 +47,7 @@ export const env = {
   /** Zotero sign-in (optional OAuth app from zotero.org/oauth/apps; API keys work without it). */
   zoteroClientKey: read('ZOTERO_CLIENT_KEY'),
   zoteroClientSecret: read('ZOTERO_CLIENT_SECRET'),
+  zoteroCallbackUrl: read('ZOTERO_CALLBACK_URL'),
   /** Mendeley import (OAuth app from dev.mendeley.com). */
   mendeleyClientId: read('MENDELEY_CLIENT_ID'),
   mendeleyClientSecret: read('MENDELEY_CLIENT_SECRET'),
