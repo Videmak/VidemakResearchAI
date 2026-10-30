@@ -20,6 +20,14 @@ export const SETTING_FIELDS = [
   { key: 'openalexEmail', group: 'papers', label: 'Contact email for OpenAlex', secret: false },
   { key: 'videmakApiKey', group: 'cloud', label: 'Videmak Cloud key (self-hosted installs)', secret: true, placeholder: 'vm_live_…',
     link: { label: 'Get a key', href: 'https://videmak.net/developers' } },
+  { key: 'zoteroClientKey', group: 'library', label: 'Zotero client key (optional)', secret: false,
+    link: { label: 'Register an app', href: 'https://www.zotero.org/oauth/apps' },
+    help: 'Optional: adds a "Connect Zotero" button. Without it people paste an API key from zotero.org/settings/keys, which works too.' },
+  { key: 'zoteroClientSecret', group: 'library', label: 'Zotero client secret', secret: true },
+  { key: 'mendeleyClientId', group: 'library', label: 'Mendeley application ID', secret: false, placeholder: '12345',
+    link: { label: 'Register an app', href: 'https://dev.mendeley.com/myapps.html' },
+    help: 'Create an app at dev.mendeley.com with the redirect URL shown below, then paste its ID and secret. Until then the Mendeley tab asks people to export a .bib file.' },
+  { key: 'mendeleyClientSecret', group: 'library', label: 'Mendeley application secret', secret: true },
   { key: 'cloudDeepseekKey', group: 'cloud', label: 'Gateway upstream DeepSeek key (Videmak Cloud)', secret: true },
   { key: 'cloudScholarKey', group: 'cloud', label: 'Gateway upstream Scholar key (Videmak Cloud)', secret: true },
   { key: 'cloudDailyFreeCredits', group: 'cloud', label: 'Free credits a day per account', secret: false, placeholder: '1000' },
@@ -89,6 +97,10 @@ function decrypt(stored: string) {
   decipher.setAuthTag(tag);
   return Buffer.concat([decipher.update(data), decipher.final()]).toString('utf8');
 }
+
+/** Encrypts a secret for storage elsewhere (reference manager tokens) with the same key as settings. */
+export const sealSecret = (value: string) => encrypt(value);
+export const openSecret = (stored: string) => decrypt(stored);
 
 /** Loads saved overrides from the database (at start-up and after every change). */
 export async function loadSettings() {

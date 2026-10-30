@@ -8,6 +8,20 @@ const fs = require('fs');
 const BASE = process.env.BASE || 'http://localhost:8080';
 const OUT = process.env.OUT || '/shots';
 const PDF = process.env.PDF || '/shots/export/audit.pdf';
+/** The PDF to upload: the one an earlier export audit wrote, else a small built-in one. */
+function samplePdf() {
+  if (fs.existsSync(PDF)) return fs.readFileSync(PDF);
+  const text = 'Sleep supports memory consolidation through replay during slow-wave sleep.';
+  const stream = `BT /F1 14 Tf 72 720 Td (${text}) Tj ET`;
+  const objects = ['<< /Type /Catalog /Pages 2 0 R >>', '<< /Type /Pages /Kids [3 0 R] /Count 1 >>',
+    '<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] /Contents 4 0 R /Resources << /Font << /F1 5 0 R >> >> >>',
+    `<< /Length ${stream.length} >>\nstream\n${stream}\nendstream`, '<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>'];
+  let body = '%PDF-1.4\n';
+  const offsets = objects.map((object, index) => { const at = body.length; body += `${index + 1} 0 obj\n${object}\nendobj\n`; return at; });
+  const xref = body.length;
+  body += `xref\n0 ${objects.length + 1}\n0000000000 65535 f \n${offsets.map((at) => `${String(at).padStart(10, '0')} 00000 n \n`).join('')}trailer\n<< /Size ${objects.length + 1} /Root 1 0 R >>\nstartxref\n${xref}\n%%EOF\n`;
+  return Buffer.from(body);
+}
 const P = (t) => ({ id: crypto.randomUUID(), type: 'paragraph', props: {}, content: [{ type: 'text', text: t, styles: {} }], children: [] });
 
 (async () => {
@@ -24,10 +38,14 @@ const P = (t) => ({ id: crypto.randomUUID(), type: 'paragraph', props: {}, conte
   await page.goto(`${BASE}/editor?tool=library`, { waitUntil: 'domcontentloaded' });
   await page.waitForTimeout(4000);
   const drawer = page.locator('.ce-tool-drawer');
+  // Add opens the Add to Library dialog; its drop zone takes the PDF.
+  await drawer.getByRole('button', { name: 'Add to Library' }).first().click();
   const chooser = page.waitForEvent('filechooser');
-  await drawer.getByRole('button', { name: 'Upload a PDF' }).click();
-  await (await chooser).setFiles({ name: 'sleep-study.pdf', mimeType: 'application/pdf', buffer: fs.readFileSync(PDF) });
-  await page.waitForTimeout(2500);
+  await page.getByTestId('pdf-dropzone').click();
+  await (await chooser).setFiles({ name: 'sleep-study.pdf', mimeType: 'application/pdf', buffer: samplePdf() });
+  await page.locator('[aria-label="Added"]').first().waitFor({ timeout: 60000 });
+  await page.getByRole('dialog', { name: 'Add to Library' }).getByRole('button', { name: 'Close' }).click();
+  await page.waitForTimeout(1500);
   log(`after upload: toasts ${JSON.stringify(await page.locator('[role="status"]').allInnerTexts())} | rows ${await drawer.locator('article').count()} | ${(await drawer.innerText()).replace(/\s+/g, ' ').slice(0, 160)}`);
   // Processing: poll the API (the drawer shows "Processing" until done).
   const t0 = Date.now();

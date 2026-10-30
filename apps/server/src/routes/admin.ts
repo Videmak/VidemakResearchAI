@@ -10,6 +10,7 @@ import { env } from '../env.js';
 import { stripeClient } from '../lib/stripeBilling.js';
 import { loadPlans } from '../lib/plans.js';
 import { checkScholar } from '../lib/scholar.js';
+import { mendeleyRedirectUri, zoteroCallbackUrl } from '../lib/referenceManagers.js';
 import { syncPlanToStripe } from '../lib/planBilling.js';
 import type { Slots } from '../slots/types.js';
 import { BucketStore, bucketConfig, copyStatus, startCopyToBucket, testStorage } from '../lib/storage.js';
@@ -33,6 +34,7 @@ export function adminRoutes(slots: Slots) {
     stripe_webhook: { url: `${settings().publicUrl.replace(/\/$/, '')}/api/stripe/webhook`, events: WEBHOOK_EVENTS },
     // What to paste as the redirect / return URL in Google, Microsoft and Apple.
     signin_redirects: Object.fromEntries(PROVIDERS.map((provider) => [provider, redirectUri(provider)])),
+    library_redirects: { zotero: zoteroCallbackUrl(), mendeley: mendeleyRedirectUri() },
   }));
 
   app.put('/settings', async (c) => {

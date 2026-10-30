@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import type { IconType } from 'react-icons';
 import {
   LuBookOpen, LuCheck, LuCircleAlert, LuCircleCheck, LuCloud, LuCopy, LuCreditCard, LuHardDrive, LuHistory, LuKeyRound, LuLayers,
-  LuLayoutDashboard, LuMail, LuNewspaper, LuPlugZap, LuSend, LuSettings, LuSparkles, LuUsers, LuX,
+  LuLibrary, LuLayoutDashboard, LuMail, LuNewspaper, LuPlugZap, LuSend, LuSettings, LuSparkles, LuUsers, LuX,
 } from 'react-icons/lu';
 import { AppFrame } from '@/components/app/AppFrame';
 import { Button, Card } from '@/components/app/ui';
@@ -21,6 +21,7 @@ import { api, useSession } from '@/lib/session';
 /** Settings groups from the server, in the order and with the names the console shows. */
 const GROUPS: Record<string, { title: string; nav: string; subtitle: string; icon: IconType; test?: string; testLabel?: string }> = {
   signin: { title: 'Sign-in methods', nav: 'Sign-in', subtitle: 'How people sign in and sign up.', icon: LuKeyRound },
+  library: { title: 'Library imports', nav: 'Library', subtitle: 'Zotero and Mendeley. Plans decide who may use them.', icon: LuLibrary },
   storage: { title: 'Storage', nav: 'Storage', subtitle: 'Uploads, images and Word files.', icon: LuHardDrive, test: 'storage' },
   email: { title: 'Email', nav: 'Email', subtitle: 'Password resets and email confirmation.', icon: LuMail, test: 'email', testLabel: 'Send test email' },
   newsletter: { title: 'Newsletter', nav: 'Newsletter', subtitle: 'People with a confirmed email, kept in step with MailCheap.', icon: LuNewspaper, test: 'newsletter' },
@@ -45,6 +46,7 @@ export default function AdminPage() {
   const [settings, setSettings] = useState<Setting[]>([]);
   const [webhook, setWebhook] = useState<Webhook | null>(null);
   const [redirects, setRedirects] = useState<Record<string, string>>({});
+  const [libraryRedirects, setLibraryRedirects] = useState<Record<string, string>>({});
   const [copiedUrl, setCopiedUrl] = useState<string | null>(null);
   const [overview, setOverview] = useState<Overview | null>(null);
   const [plans, setPlans] = useState<PlansResponse | null>(null);
@@ -88,11 +90,11 @@ export default function AdminPage() {
 
   const load = useCallback(async () => {
     const [config, info] = await Promise.allSettled([
-      api<{ settings: Setting[]; stripe_webhook?: Webhook; signin_redirects?: Record<string, string> }>('/api/admin/settings'),
+      api<{ settings: Setting[]; stripe_webhook?: Webhook; signin_redirects?: Record<string, string>; library_redirects?: Record<string, string> }>('/api/admin/settings'),
       api<Overview>('/api/admin/overview'),
       loadPlans(),
     ]);
-    if (config.status === 'fulfilled') { setSettings(config.value.settings); setWebhook(config.value.stripe_webhook ?? null); setRedirects(config.value.signin_redirects ?? {}); }
+    if (config.status === 'fulfilled') { setSettings(config.value.settings); setWebhook(config.value.stripe_webhook ?? null); setRedirects(config.value.signin_redirects ?? {}); setLibraryRedirects(config.value.library_redirects ?? {}); }
     if (info.status === 'fulfilled') setOverview(info.value);
     const failed = [config, info].find((result) => result.status === 'rejected') as PromiseRejectedResult | undefined;
     if (failed) setNotice({ tone: 'error', text: (failed.reason as Error).message });
@@ -182,12 +184,12 @@ export default function AdminPage() {
           busy={busy}
           onSave={saveSettings}
           testResult={group.test ? tests[group.test] : undefined}
-          extra={group.id === 'signin' && Object.keys(redirects).length ? (
+          extra={(group.id === 'signin' || group.id === 'library') && Object.keys(group.id === 'signin' ? redirects : libraryRedirects).length ? (
             <div className="border-t border-line-2 px-5 py-4">
               <p className="text-[14px] font-medium">Callback URLs</p>
               <p className="mt-0.5 text-[12.5px] text-muted">Add each one as the redirect URI in that provider's console.</p>
               <div className="mt-2.5 flex flex-col gap-2">
-                {Object.entries(redirects).map(([provider, url]) => (
+                {Object.entries(group.id === 'signin' ? redirects : libraryRedirects).map(([provider, url]) => (
                   <div key={provider} className="flex items-center gap-2">
                     <span className="w-[76px] shrink-0 text-[13px] capitalize text-ink-2">{provider}</span>
                     <code className="min-w-0 flex-1 truncate rounded-[10px] border border-line bg-soft px-3 py-2 font-mono text-[13px]">{url}</code>

@@ -31,6 +31,8 @@ export type PaperSearchInput = Parameters<PapersSlot['search']>[0] & { page?: nu
 export interface PagedPapersSlot extends PapersSlot {
   searchPage(input: PaperSearchInput): Promise<{ results: RichPaper[]; total: number }>;
   lookupWork(workId: string): Promise<RichPaper | null>;
+  /** A PubMed id, through the index's pmid: identifier. */
+  lookupPmid(pmid: string): Promise<RichPaper | null>;
 }
 
 export class PapersError extends Error {
@@ -292,6 +294,11 @@ export function createPapersSlot(options: { settings?: PapersSettings; fetch?: t
       const data = await request(`works/doi:${encodeURI(clean).replace(/#/g, '%23').replace(/\?/g, '%3F')}`, {});
       return data && typeof data === 'object' && data.id ? workToPaper(data) : null;
     },
+    async lookupPmid(pmid) {
+      if (!/^\d{1,10}$/.test(pmid)) return null;
+      const data = await request(`works/pmid:${pmid}`, {});
+      return data && typeof data === 'object' && data.id ? workToPaper(data) : null;
+    },
     async lookupWork(workId) {
       if (!/^W\d+$/.test(workId)) return null;
       const data = await request(`works/${workId}`, {});
@@ -303,5 +310,5 @@ export function createPapersSlot(options: { settings?: PapersSettings; fetch?: t
 /** True for our slots (paged search, totals, work lookup); a plain PapersSlot gets fallbacks. */
 export function isPagedPapersSlot(slot: PapersSlot): slot is PagedPapersSlot {
   const paged = slot as Partial<PagedPapersSlot>;
-  return typeof paged.searchPage === 'function' && typeof paged.lookupWork === 'function';
+  return typeof paged.searchPage === 'function' && typeof paged.lookupWork === 'function' && typeof paged.lookupPmid === 'function';
 }

@@ -8,6 +8,8 @@ import { documentRoutes } from './routes/documents.js';
 import { assistRoutes } from './routes/assist.js';
 import { wordRoutes } from './routes/word.js';
 import { libraryRoutes } from './routes/library.js';
+import { libraryImportRoutes } from './routes/libraryImport.js';
+import { libraryConnectionRoutes } from './routes/libraryConnections.js';
 import { versionRoutes } from './routes/versions.js';
 import { cloudPriceRoutes, cloudRoutes } from './routes/cloud.js';
 import { gatewayRoutes } from './routes/gateway.js';
@@ -36,6 +38,8 @@ export function createApp() {
   app.route('/api/ai-editor', wordRoutes());
   app.route('/api/ai-editor', reviewRoutes(slots));
   app.route('/api/editor', generateRoutes(slots));
+  app.route('/api/library', libraryConnectionRoutes());
+  app.route('/api/library', libraryImportRoutes(slots));
   app.route('/api/library', libraryRoutes(slots));
   app.route('/api/cloud/prices', cloudPriceRoutes());
   app.route('/api/cloud', cloudRoutes());

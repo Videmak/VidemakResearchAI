@@ -16,8 +16,15 @@ export const LIMIT_DEFS = {
   review: { kind: 'count', label: 'Review checks', noun: 'review checks' },
   write: { kind: 'count', label: 'Write with AI drafts', noun: 'Write with AI drafts' },
   library_pdfs: { kind: 'total', label: 'PDFs in Library', noun: 'PDFs in your Library' },
+  upload_mb: { kind: 'total', label: 'Largest PDF (MB)', noun: 'MB per PDF' },
+  upload_batch: { kind: 'total', label: 'PDFs per upload', noun: 'PDFs at once' },
   latex_export: { kind: 'feature', label: 'LaTeX export', noun: 'LaTeX export' },
+  zotero_import: { kind: 'feature', label: 'Zotero import', noun: 'Zotero import' },
+  mendeley_import: { kind: 'feature', label: 'Mendeley import', noun: 'Mendeley import' },
 } as const;
+
+/** Largest PDF the server takes on any plan (an unlimited plan still stops here). */
+export const HARD_UPLOAD_MB = 100;
 
 export type LimitKey = keyof typeof LIMIT_DEFS;
 export type CountLimit = { amount: number | null; per: 'day' | 'month' };
@@ -28,8 +35,15 @@ export type Limits = {
   review: CountLimit;
   write: CountLimit;
   library_pdfs: number | null;
+  upload_mb: number | null;
+  upload_batch: number | null;
   latex_export: boolean;
+  zotero_import: boolean;
+  mendeley_import: boolean;
 };
+
+export type FeatureKey = 'latex_export' | 'zotero_import' | 'mendeley_import';
+type TotalKey = 'library_pdfs' | 'upload_mb' | 'upload_batch';
 
 export type PlanRow = {
   id: string; name: string; tagline: string; sort_order: number; is_default: boolean; is_public: boolean; featured: boolean;
@@ -41,7 +55,8 @@ export type PlanFeature = { label: string; included: boolean };
 
 const UNLIMITED: CountLimit = { amount: null, per: 'month' };
 const UNLIMITED_LIMITS: Limits = {
-  autocomplete: UNLIMITED, ai_edit: UNLIMITED, chat: UNLIMITED, review: UNLIMITED, write: UNLIMITED, library_pdfs: null, latex_export: true,
+  autocomplete: UNLIMITED, ai_edit: UNLIMITED, chat: UNLIMITED, review: UNLIMITED, write: UNLIMITED,
+  library_pdfs: null, upload_mb: null, upload_batch: null, latex_export: true, zotero_import: true, mendeley_import: true,
 };
 
 /** Fills a stored limits object with unlimited defaults for any missing key. */
@@ -53,15 +68,23 @@ export function normalizeLimits(raw: unknown): Limits {
     const amount = item.amount === null || item.amount === undefined || item.amount === '' ? null : Math.max(0, Math.floor(Number(item.amount)));
     return { amount: Number.isFinite(amount as number) || amount === null ? amount : null, per: item.per === 'day' ? 'day' : 'month' };
   };
-  const pdfs = value.library_pdfs;
+  const total = (key: TotalKey) => {
+    const item = value[key];
+    return item === null || item === undefined || item === '' ? null : Math.max(0, Math.floor(Number(item)));
+  };
+  const feature = (key: FeatureKey) => (value[key] === undefined ? true : Boolean(value[key]));
   return {
     autocomplete: count('autocomplete'),
     ai_edit: count('ai_edit'),
     chat: count('chat'),
     review: count('review'),
     write: count('write'),
-    library_pdfs: pdfs === null || pdfs === undefined || pdfs === '' ? null : Math.max(0, Math.floor(Number(pdfs))),
-    latex_export: value.latex_export === undefined ? true : Boolean(value.latex_export),
+    library_pdfs: total('library_pdfs'),
+    upload_mb: total('upload_mb'),
+    upload_batch: total('upload_batch'),
+    latex_export: feature('latex_export'),
+    zotero_import: feature('zotero_import'),
+    mendeley_import: feature('mendeley_import'),
   };
 }
 
@@ -72,7 +95,8 @@ export const DEFAULT_PLANS: (Omit<PlanRow, 'stripe_product_id' | 'stripe_monthly
     checkout: 'self_serve', contact_url: null, monthly_cents: 0, yearly_cents: 0, currency: 'usd', trial_days: 0,
     limits: {
       autocomplete: { amount: 10, per: 'day' }, ai_edit: { amount: 3, per: 'day' }, chat: { amount: 5, per: 'day' },
-      review: { amount: 3, per: 'day' }, write: { amount: 1, per: 'day' }, library_pdfs: 10, latex_export: false,
+      review: { amount: 3, per: 'day' }, write: { amount: 1, per: 'day' }, library_pdfs: 10, upload_mb: 10, upload_batch: 5,
+      latex_export: false, zotero_import: false, mendeley_import: false,
     },
     features: [
       { label: 'The full editor, on any device', included: true },
@@ -80,9 +104,10 @@ export const DEFAULT_PLANS: (Omit<PlanRow, 'stripe_product_id' | 'stripe_monthly
       { label: '5 AI chat messages and 3 AI edits a day', included: true },
       { label: '3 review checks and 1 Write with AI draft a day', included: true },
       { label: 'Unlimited citations in every style', included: true },
-      { label: '10 PDFs in your Library', included: true },
+      { label: '10 PDFs in your Library, up to 10 MB each', included: true },
       { label: 'Word and PDF export', included: true },
       { label: 'LaTeX export', included: false },
+      { label: 'Zotero and Mendeley import', included: false },
     ],
   },
   {
@@ -90,7 +115,8 @@ export const DEFAULT_PLANS: (Omit<PlanRow, 'stripe_product_id' | 'stripe_monthly
     checkout: 'self_serve', contact_url: null, monthly_cents: 1200, yearly_cents: 9600, currency: 'usd', trial_days: 0,
     limits: {
       autocomplete: { amount: 5000, per: 'month' }, ai_edit: { amount: 500, per: 'month' }, chat: { amount: 500, per: 'month' },
-      review: { amount: 30, per: 'month' }, write: { amount: 20, per: 'month' }, library_pdfs: null, latex_export: true,
+      review: { amount: 30, per: 'month' }, write: { amount: 20, per: 'month' }, library_pdfs: null, upload_mb: 50, upload_batch: 20,
+      latex_export: true, zotero_import: true, mendeley_import: true,
     },
     features: [
       { label: 'Everything in Free', included: true },
@@ -98,7 +124,8 @@ export const DEFAULT_PLANS: (Omit<PlanRow, 'stripe_product_id' | 'stripe_monthly
       { label: '500 AI edits and 500 chat messages a month', included: true },
       { label: '30 review checks a month', included: true },
       { label: '20 Write with AI drafts a month', included: true },
-      { label: 'Unlimited PDFs in your Library', included: true },
+      { label: 'Unlimited PDFs in your Library, up to 50 MB each', included: true },
+      { label: 'Zotero and Mendeley import', included: true },
       { label: 'Word, PDF and LaTeX export', included: true },
     ],
   },
@@ -206,7 +233,7 @@ function limitMessage(key: LimitKey, plan: PlanRow, limit: CountLimit | number) 
 }
 
 /** Refuses (402) when a counted action is used up; returns what is left (null: unlimited). */
-export async function checkQuota(accountId: string, key: Exclude<LimitKey, 'library_pdfs' | 'latex_export'>): Promise<number | null> {
+export async function checkQuota(accountId: string, key: Exclude<LimitKey, TotalKey | FeatureKey>): Promise<number | null> {
   const { plan, limits } = await effectivePlan(accountId);
   const limit = limits[key];
   if (limit.amount === null) return null;
@@ -227,7 +254,7 @@ export async function countUse(accountId: string, key: LimitKey, amount = 1) {
 }
 
 /** Refuses (402) a feature the plan does not include. */
-export async function requireFeature(accountId: string, key: 'latex_export') {
+export async function requireFeature(accountId: string, key: FeatureKey) {
   const { plan, limits } = await effectivePlan(accountId);
   if (!limits[key]) throw new PlanLimitError(`${LIMIT_DEFS[key].label} is part of the paid plans. Upgrade to use it.`, key, plan.id);
 }
@@ -239,6 +266,31 @@ export async function checkLibraryRoom(accountId: string, userId: string, adding
   // PDFs only: saved references without a file stay unlimited.
   const [{ count }] = await sql<{ count: number }[]>`select count(*)::int as count from library_documents where user_id = ${userId} and file_type = 'pdf'`;
   if (count + adding > limits.library_pdfs) throw new PlanLimitError(limitMessage('library_pdfs', plan, limits.library_pdfs), 'library_pdfs', plan.id);
+}
+
+/** What the Library's add dialog may do on this plan: PDFs left, largest file, files at once, imports. */
+export async function libraryLimits(accountId: string, userId: string) {
+  const { plan, limits } = await effectivePlan(accountId);
+  const [{ count }] = await sql<{ count: number }[]>`select count(*)::int as count from library_documents where user_id = ${userId} and file_type = 'pdf'`;
+  return {
+    plan: { id: plan.id, name: plan.name, is_default: plan.is_default },
+    pdfs_used: count,
+    pdfs_limit: limits.library_pdfs,
+    pdfs_left: limits.library_pdfs === null ? null : Math.max(0, limits.library_pdfs - count),
+    upload_mb: Math.min(limits.upload_mb ?? HARD_UPLOAD_MB, HARD_UPLOAD_MB),
+    upload_batch: limits.upload_batch ?? 50,
+    zotero_import: limits.zotero_import,
+    mendeley_import: limits.mendeley_import,
+  };
+}
+
+/** Refuses a PDF over the plan's size (402, so the browser offers an upgrade) or over the hard cap (413). */
+export async function checkUploadSize(accountId: string, bytes: number) {
+  const { plan, limits } = await effectivePlan(accountId);
+  if (bytes > HARD_UPLOAD_MB * 1024 * 1024) throw new HTTPException(413, { message: `PDFs can be up to ${HARD_UPLOAD_MB} MB.` });
+  if (limits.upload_mb !== null && bytes > limits.upload_mb * 1024 * 1024) {
+    throw new PlanLimitError(`Your ${plan.name} plan takes PDFs up to ${limits.upload_mb} MB. Upgrade for larger files.`, 'upload_mb', plan.id);
+  }
 }
 
 /** This period's use of each counted limit, for the account page and the pricing dialog. */
@@ -265,7 +317,7 @@ export function publicPlan(plan: PlanRow, features: PlanFeature[]) {
   };
 }
 
-type CountKey = Exclude<LimitKey, 'library_pdfs' | 'latex_export'>;
+type CountKey = Exclude<LimitKey, TotalKey | FeatureKey>;
 
 /**
  * Route guard for a counted action: refuses (402) when the plan's allowance is used up, and

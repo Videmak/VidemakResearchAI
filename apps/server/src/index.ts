@@ -8,11 +8,13 @@ import { handleRealtimeUpgrade } from './realtime.js';
 import { loadSettings } from './lib/settings.js';
 import { seedPlans } from './lib/plans.js';
 import { startNewsletterSync } from './lib/newsletter.js';
+import { closeInterruptedImports } from './lib/libraryImport.js';
 
 await migrate();
 await loadSettings();
 if (await seedPlans()) console.log('default plans created');
 startNewsletterSync();
+await closeInterruptedImports();
 const app = createApp();
 const server = serve({ fetch: app.fetch, port: env.port, hostname: '0.0.0.0' }, (info) => {
   console.log(`videmak server listening on :${info.port}`);

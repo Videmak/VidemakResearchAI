@@ -3,8 +3,9 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { LuChevronRight, LuCopy, LuExternalLink, LuFileText, LuFolder, LuLibrary, LuMessageCircle, LuQuote, LuSearch, LuUpload, LuX } from 'react-icons/lu';
 import { toast } from 'react-hot-toast';
-import { getDocuments, getFolders, uploadDocument, type FolderResponse, type LibraryDocumentResponse } from '../../../utils/libraryApi';
-import { copyLibraryReference, LIBRARY_CHANGED_EVENT, notifyLibraryChanged } from '../../../lib/aiEditor/references';
+import { getDocuments, getFolders, type FolderResponse, type LibraryDocumentResponse } from '../../../utils/libraryApi';
+import { copyLibraryReference, LIBRARY_CHANGED_EVENT } from '../../../lib/aiEditor/references';
+import LibraryAddDialog, { type AddTab } from './LibraryAddDialog';
 import { askAboutInSideloadChat } from '../../../lib/sideloads';
 
 type Props = {
@@ -51,8 +52,7 @@ export default function LibraryPanel({ onCite, onAsk, citing, visible = true }: 
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [expandedId, setExpandedId] = useState<string | null>(null);
-  const [uploading, setUploading] = useState(false);
-  const fileInput = useRef<HTMLInputElement>(null);
+  const [adding, setAdding] = useState<AddTab | null>(null);
   const requestRef = useRef(0);
 
   const load = useCallback(async (search: string, folder: string) => {
@@ -103,18 +103,20 @@ export default function LibraryPanel({ onCite, onAsk, citing, visible = true }: 
     return () => window.removeEventListener(LIBRARY_CHANGED_EVENT, reload);
   }, [load]);
 
-  const handleUpload = async (file: File) => {
-    setUploading(true);
-    try {
-      await uploadDocument(file, { folder_id: folderId || undefined });
-      toast.success(`${file.name} added to your Library. It will be ready to cite in a moment.`);
-      notifyLibraryChanged();
-    } catch (caught) {
-      toast.error((caught as Error).message || 'The upload failed.');
-    } finally {
-      setUploading(false);
+  // Back from connecting Zotero or Mendeley: reopen the add dialog on that service.
+  useEffect(() => {
+    const hash = window.location.hash;
+    const connected = /library-connected=(zotero|mendeley)/.exec(hash)?.[1] as AddTab | undefined;
+    const failed = /library-error=([^&]+)/.exec(hash)?.[1];
+    if (!connected && !failed) return;
+    window.history.replaceState(null, '', `${window.location.pathname}${window.location.search}`);
+    if (connected) {
+      toast.success(`${connected === 'zotero' ? 'Zotero' : 'Mendeley'} is connected.`);
+      setAdding(connected);
+    } else if (failed) {
+      toast.error(decodeURIComponent(failed));
     }
-  };
+  }, []);
 
   const smallButton = 'inline-flex h-7 items-center gap-1 rounded-lg px-2 text-[12.5px] font-medium text-[#475569] transition-colors hover:bg-[#f1f5f9] hover:text-[#0f172a] disabled:opacity-60';
 
@@ -134,26 +136,14 @@ export default function LibraryPanel({ onCite, onAsk, citing, visible = true }: 
           </div>
           <button
             type="button"
-            onClick={() => fileInput.current?.click()}
-            disabled={uploading}
-            aria-label="Upload a PDF"
-            title="Upload a PDF"
-            className="inline-flex h-9 shrink-0 items-center gap-1.5 rounded-[10px] bg-[#eff6ff] px-3 text-[13px] font-semibold text-[#1d4ed8] transition-colors hover:bg-[#dbeafe] disabled:opacity-60"
+            onClick={() => setAdding('pdfs')}
+            aria-label="Add to Library"
+            title="Upload PDFs, or import from Zotero, Mendeley, .bib/.ris or IDs"
+            className="inline-flex h-9 shrink-0 items-center gap-1.5 rounded-[10px] bg-[#eff6ff] px-3 text-[13px] font-semibold text-[#1d4ed8] transition-colors hover:bg-[#dbeafe]"
           >
-            {uploading ? <span className="h-4 w-4 animate-spin rounded-full border-2 border-[#bfdbfe] border-t-[var(--theme-primary,#2563eb)]" /> : <LuUpload className="h-4 w-4" />}
-            Upload
+            <LuUpload className="h-4 w-4" />
+            Add
           </button>
-          <input
-            ref={fileInput}
-            type="file"
-            accept=".pdf,.docx,.doc,.txt,.md,.epub"
-            className="hidden"
-            onChange={(event) => {
-              const file = event.target.files?.[0];
-              event.target.value = '';
-              if (file) void handleUpload(file);
-            }}
-          />
         </div>
         {/* Sources and Collections (folders). */}
         <div className="mt-2 flex items-center gap-4 border-b border-[#f1f5f9] px-1">
@@ -211,9 +201,9 @@ export default function LibraryPanel({ onCite, onAsk, citing, visible = true }: 
             <div className="flex flex-col items-center px-6 pt-14 text-center">
               <span className="grid h-11 w-11 place-items-center rounded-full bg-[#f1f5f9] text-[#94a3b8]"><LuLibrary className="h-5 w-5" /></span>
               <p className="mt-3 text-[14px] font-semibold text-[#0f172a]">Your Library is empty</p>
-              <p className="mt-1 text-[13px] text-[#64748b]">Add PDFs to cite and chat with them.</p>
-              <button type="button" onClick={() => fileInput.current?.click()} className="mt-4 inline-flex h-8 items-center gap-1.5 rounded-lg bg-[#eff6ff] px-3 text-[13px] font-semibold text-[#1d4ed8] transition-colors hover:bg-[#dbeafe]">
-                <LuUpload className="h-4 w-4" />Add PDF
+              <p className="mt-1 text-[13px] text-[#64748b]">Add PDFs, or import from Zotero, Mendeley or a .bib file.</p>
+              <button type="button" onClick={() => setAdding('pdfs')} className="mt-4 inline-flex h-8 items-center gap-1.5 rounded-lg bg-[#eff6ff] px-3 text-[13px] font-semibold text-[#1d4ed8] transition-colors hover:bg-[#dbeafe]">
+                <LuUpload className="h-4 w-4" />Add to Library
               </button>
             </div>
           )
@@ -309,6 +299,7 @@ export default function LibraryPanel({ onCite, onAsk, citing, visible = true }: 
         ) : null}
       </div>
       )}
+      <LibraryAddDialog open={adding !== null} initialTab={adding ?? 'pdfs'} folderId={folderId || null} onClose={() => setAdding(null)} />
     </div>
   );
 }
