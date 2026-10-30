@@ -9,7 +9,7 @@ export const dynamic = 'force-dynamic';
 const serverUrl = process.env.VIDEMAK_SERVER_URL || 'http://localhost:4000';
 /** Where Videmak Cloud answers, and the source code (shown only once it is public). */
 const apiUrl = (process.env.PUBLIC_API_URL || 'https://new.videmak.net').replace(/\/+$/, '');
-const githubUrl = process.env.GITHUB_URL || '';
+const githubUrl = process.env.GITHUB_URL || 'https://github.com/Videmak/VidemakResearchAI';
 const contactEmail = process.env.SUPPORT_EMAIL || process.env.NEXT_PUBLIC_SUPPORT_EMAIL || 'admin@videmak.org';
 const contact = `mailto:${contactEmail}?subject=Videmak%20for%20our%20institution`;
 
@@ -191,8 +191,8 @@ reply = client.chat.completions.create(
               </ul>
             </div>
             <div className="flex flex-col gap-3">
-              <Code>{`git clone ${githubUrl || 'https://github.com/<org>/videmak'}
-cd videmak
+              <Code>{`git clone ${githubUrl}
+cd ${githubUrl.split('/').pop()}
 cp .env.example .env      # set PUBLIC_URL and VIDEMAK_API_KEY
 docker compose up -d      # http://localhost:3000`}</Code>
               <p className="text-[13.5px] text-muted">The README has every setting, backups and upgrades.</p>
