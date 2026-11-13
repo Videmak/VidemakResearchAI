@@ -10,7 +10,7 @@ const COMPANY = {
   email: process.env.NEXT_PUBLIC_SUPPORT_EMAIL || '',
 };
 
-// Only pages that exist. Privacy and Terms come back once their text is written (no page yet).
+// Only pages that exist.
 const COLUMNS = [
   {
     title: 'Product',
@@ -18,7 +18,7 @@ const COLUMNS = [
       { label: 'Features', href: '/features' },
       { label: 'How it works', href: '/how-it-works' },
       { label: 'Pricing', href: '/pricing' },
-      { label: 'FAQ', href: '/#faq' },
+      { label: 'FAQ', href: '/editor-home#faq' },
     ],
   },
   {
@@ -51,7 +51,7 @@ export function SiteFooter() {
     <footer className="border-t border-line">
       <div className={`${container} grid gap-x-10 gap-y-10 pb-12 pt-14 md:grid-cols-[1.6fr_repeat(4,1fr)]`}>
         <div>
-          <Link href="/" className={`inline-block rounded-lg ${focusRing}`}>
+          <Link href="/editor-home" className={`inline-block rounded-lg ${focusRing}`}>
             <Logo size={24} />
             <span className="sr-only">Videmak home</span>
           </Link>
@@ -80,6 +80,11 @@ export function SiteFooter() {
           {COMPANY.address && <span>{COMPANY.address}</span>}
           {COMPANY.phone && <a href={`tel:${COMPANY.phone.replace(/[^+\d]/g, '')}`} className="hover:text-ink">{COMPANY.phone}</a>}
           {COMPANY.email && <a href={`mailto:${COMPANY.email}`} className="hover:text-ink">{COMPANY.email}</a>}
+          <span className="flex gap-4 md:ml-auto">
+            <Link href="/page/privacy_policy" className="hover:text-ink">Privacy</Link>
+            <Link href="/page/terms-and-conditions" className="hover:text-ink">Terms</Link>
+            <Link href="/contact" className="hover:text-ink">Contact</Link>
+          </span>
         </div>
       </div>
     </footer>

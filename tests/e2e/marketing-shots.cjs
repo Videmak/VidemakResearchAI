@@ -3,7 +3,7 @@
 const { chromium, devices } = require('playwright');
 const BASE = process.env.BASE || 'http://localhost:8080';
 const TAG = process.argv[2] || 'm';
-const PATHS = process.argv.slice(3).length ? process.argv.slice(3) : ['/', '/pricing', '/login', '/signup', '/forgot-password'];
+const PATHS = process.argv.slice(3).length ? process.argv.slice(3) : ['/', '/editor-home', '/pricing', '/login', '/signup', '/forgot-password'];
 (async () => {
   const browser = await chromium.launch();
   for (const [kind, options] of [['desktop', { viewport: { width: 1440, height: 900 } }], ['phone', devices['iPhone 13']]]) {

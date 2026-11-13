@@ -115,7 +115,7 @@ export function SiteNav({ signedIn }: { signedIn: boolean }) {
       >
         <div className="flex h-full flex-col">
           <div className="flex h-14 shrink-0 items-center px-4">
-            <Link href="/" onClick={() => setOpen(false)} className={`rounded-lg ${focusRing}`}>
+            <Link href="/editor-home" onClick={() => setOpen(false)} className={`rounded-lg ${focusRing}`}>
               <Logo size={26} />
               <span className="sr-only">Videmak home</span>
             </Link>

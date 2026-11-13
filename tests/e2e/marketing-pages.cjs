@@ -1,4 +1,4 @@
-// Public pages are separate pages now: /, /features, /how-it-works, /pricing on desktop and
+// The editor's public pages: /editor-home, /features, /how-it-works, /pricing on desktop and
 // phone, signed out and signed in. Checks the active menu item, the free-plan strip (signed out
 // only), Dashboard when signed in, no sideways scroll and no page errors; writes /shots/pages-*.png.
 //   (node localproxy.cjs &) ; BASE=http://localhost:8080 node marketing-pages.cjs
@@ -9,7 +9,7 @@ const OUT = process.env.OUT || '/shots';
 const results = [];
 const check = (name, ok, extra = '') => { results.push(ok); console.log(`${ok ? 'PASS' : 'FAIL'} ${name}${extra ? ` | ${extra}` : ''}`); };
 const PAGES = [
-  { path: '/', menu: null, heading: 'Write your paper faster' },
+  { path: '/editor-home', menu: null, heading: 'Write your paper faster' },
   { path: '/features', menu: 'Features', heading: 'Everything you need to write a paper' },
   { path: '/how-it-works', menu: 'How it works', heading: 'From blank page to cited paper' },
   { path: '/pricing', menu: 'Pricing', heading: null },
@@ -45,7 +45,7 @@ const PAGES = [
           const dashboard = await header.getByRole('link', { name: 'Dashboard' }).isVisible().catch(() => false);
           check(`${tag}: ${state === 'in' ? 'Dashboard shown' : 'Sign in shown'}`, state === 'in' ? dashboard : !dashboard && await header.getByRole('link', { name: 'Sign in' }).isVisible());
         }
-        await page.screenshot({ path: `${OUT}/pages${item.path === '/' ? '-home' : item.path.replace(/\//g, '-')}-${device}-${state}.png`, fullPage: true });
+        await page.screenshot({ path: `${OUT}/pages${item.path.replace(/\//g, '-')}-${device}-${state}.png`, fullPage: true });
       }
       if (device === 'phone' && state === 'out') {
         // The phone menu goes to the pages, and marks the open one.
@@ -62,11 +62,11 @@ const PAGES = [
       }
       if (device === 'desktop' && state === 'out') {
         // Home teaser cards and links go to the new pages.
-        await page.goto(`${BASE}/`, { waitUntil: 'domcontentloaded' });
+        await page.goto(`${BASE}/editor-home`, { waitUntil: 'domcontentloaded' });
         await page.getByRole('link', { name: /Find papers/ }).first().click();
         await page.waitForURL(/\/features#find-papers$/, { timeout: 10000 }).catch(() => {});
         check('home card opens /features#find-papers', page.url().endsWith('/features#find-papers'), page.url().replace(BASE, ''));
-        await page.goto(`${BASE}/`, { waitUntil: 'domcontentloaded' });
+        await page.goto(`${BASE}/editor-home`, { waitUntil: 'domcontentloaded' });
         await page.getByRole('link', { name: 'See how it works' }).click();
         await page.waitForURL(/\/how-it-works$/, { timeout: 10000 }).catch(() => {});
         check('home "See how it works" opens /how-it-works', page.url().endsWith('/how-it-works'));
@@ -79,7 +79,7 @@ const PAGES = [
     }
   }
   const sitemap = await (await fetch(`${BASE}/sitemap.xml`)).text();
-  check('sitemap lists /features and /how-it-works', sitemap.includes('/features</loc>') && sitemap.includes('/how-it-works</loc>'));
+  check('sitemap lists /editor-home, /features and /how-it-works', ['/editor-home', '/features', '/how-it-works'].every((path) => sitemap.includes(`${path}</loc>`)));
   await browser.close();
   console.log(`\n${results.filter(Boolean).length}/${results.length} passed`);
 })().catch((error) => { console.error(error); process.exit(1); });

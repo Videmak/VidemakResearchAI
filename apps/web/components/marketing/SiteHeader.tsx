@@ -31,7 +31,7 @@ export async function SiteHeader() {
       <AuthAware initial={signedIn} signedIn={null} signedOut={<FreePlanStrip />} />
       <header className="border-b border-line bg-white">
         <div className={`${container} flex h-14 items-center md:h-16`}>
-          <Link href="/" className={`shrink-0 rounded-lg ${focusRing}`}>
+          <Link href="/editor-home" className={`shrink-0 rounded-lg ${focusRing}`}>
             <Logo size={26} />
             <span className="sr-only">Videmak home</span>
           </Link>

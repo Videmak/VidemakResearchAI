@@ -81,7 +81,7 @@ export function AppFrame({ title, actions, children, wide = false }: { title: st
   return (
     <div className="min-h-dvh bg-white md:flex">
       <aside className={`sticky top-0 h-dvh w-[232px] shrink-0 flex-col border-r border-line bg-soft px-3 pt-4 pb-3 ${sideloads.drawer && !sideloads.menu ? 'hidden md:flex lg:hidden' : 'hidden md:flex'}`}>
-        <Link href="/" className="px-2 pb-[18px]" aria-label="Videmak home"><Logo size={32} /></Link>
+        <Link href="/editor-home" className="px-2 pb-[18px]" aria-label="Videmak home"><Logo size={32} /></Link>
         <Link href="/editor?new=1" className="flex h-10 items-center gap-[11px] rounded-[10px] px-2.5 text-[15px] font-semibold text-brand hover:bg-white/70">{ICONS.new}New document</Link>
         {tool('documents', 'Documents', ICONS.docs)}
         {tool('library', 'Library', ICONS.library, <span className="ml-auto text-subtle">›</span>)}

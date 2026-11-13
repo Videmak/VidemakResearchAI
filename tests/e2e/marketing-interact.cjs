@@ -8,7 +8,7 @@ const BASE = process.env.BASE || 'http://localhost:8080';
   const errors = [];
   page.on('pageerror', (e) => errors.push(e.message));
   page.on('console', (m) => m.type() === 'error' && errors.push(m.text()));
-  await page.goto(BASE + '/', { waitUntil: 'networkidle' });
+  await page.goto(BASE + '/editor-home', { waitUntil: 'networkidle' });
   await page.screenshot({ path: '/shots/r1-home-phone-top.png' });
   await page.getByRole('button', { name: 'Open menu' }).click();
   await page.waitForTimeout(400);
