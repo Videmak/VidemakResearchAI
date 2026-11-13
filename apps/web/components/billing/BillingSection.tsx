@@ -1,10 +1,11 @@
 'use client';
 
 import { useCallback, useEffect, useState } from 'react';
-import { LuCreditCard, LuDownload, LuExternalLink, LuPlus, LuTrash2, LuZap } from 'react-icons/lu';
+import { LuArrowUpRight, LuCreditCard, LuDownload, LuExternalLink, LuPlus, LuTrash2, LuZap } from 'react-icons/lu';
 import { Button, Card, CardHeader, EmptyState, StatusPill } from '@/components/app/ui';
 import { api, refreshSession } from '@/lib/session';
 import { money, openPricing, startCheckout, usePlans, type Interval } from '@/lib/billing';
+import type { CitedEvidencePlans } from '@/lib/signin';
 
 type SavedCard = { id: string; brand: string; last4: string; exp_month: number; exp_year: number; name: string | null; funding: string | null; default: boolean };
 type Invoice = {
@@ -22,6 +23,8 @@ export type Billing = {
   invoices: Invoice[];
   open_invoices: Invoice[];
   payments_enabled: boolean;
+  /** Accounts and plans on CitedEvidence: its links and the plan last read from it. */
+  citedevidence: (CitedEvidencePlans & { plan: { name: string | null; tier: string | null; active: boolean } | null }) | null;
 };
 
 const LIVE = ['active', 'trialing', 'past_due'];
@@ -116,6 +119,9 @@ export function BillingSection() {
   const lapsedPlan = lapsed ? plans?.find((plan) => plan.id === sub!.plan_id) : null;
   const shown = plans?.find((plan) => plan.id === billing.plan.id);
   const interval: Interval = sub?.interval === 'year' ? 'year' : 'month';
+  // Plans on CitedEvidence (and no subscription bought here still running): its plan is the one shown.
+  const ce = billing.citedevidence && !paying && !lapsed && sub?.source !== 'admin' && sub?.source !== 'legacy' ? billing.citedevidence : null;
+  const ceIncluded = ce && billing.plan.id === 'citedevidence';
   const price = shown && paying ? (interval === 'year' ? `${money(shown.yearly_cents, shown.currency)} / year` : `${money(shown.monthly_cents, shown.currency)} / month`) : null;
   const status = !sub || sub.source === 'default' || (!paying && !lapsed && sub.source !== 'admin')
     ? null
@@ -140,10 +146,11 @@ export function BillingSection() {
           <div className="min-w-[220px] flex-1">
             <p className="text-[13px] font-medium text-muted">Your plan</p>
             <div className="mt-1 flex flex-wrap items-center gap-2">
-              <h2 className="text-[24px] font-bold tracking-[-0.02em]">{billing.plan.name}</h2>
+              <h2 className="text-[24px] font-bold tracking-[-0.02em]">{ce ? (ceIncluded ? `CitedEvidence ${ce.plan?.name ?? ''}`.trim() : 'No plan') : billing.plan.name}</h2>
               {status && <StatusPill tone={status.tone}>{status.label}</StatusPill>}
             </div>
             {(price || periodLine) && <p className="mt-1 text-[14px] text-muted">{[price, periodLine].filter(Boolean).join(' · ')}</p>}
+            {ceIncluded && <p className="mt-1 text-[14px] text-muted">Videmak comes with your CitedEvidence plan.</p>}
             {lapsed && (
               <p className="mt-1 text-[14px] text-muted">Your {lapsedPlan?.name || 'paid'} plan ended{sub?.period_end ? ` on ${day(sub.period_end)}` : ''}.</p>
             )}
@@ -159,10 +166,17 @@ export function BillingSection() {
                 {busy === 'resume' ? 'Resuming…' : 'Keep my plan'}
               </Button>
             )}
-            <Button variant={paying || lapsed ? 'secondary' : 'primary'} onClick={() => openPricing()}>
-              {!paying && !lapsed && <LuZap className="h-4 w-4" aria-hidden="true" />}
-              {paying ? 'Change plan' : 'Upgrade'}
-            </Button>
+            {ce ? ceIncluded && (
+              <a href={ce.manage_url} target="_blank" rel="noopener"
+                className="inline-flex h-10 items-center gap-1.5 rounded-[11px] border border-line bg-white px-4 text-[14px] font-semibold text-ink-2 hover:bg-soft">
+                Manage on CitedEvidence<LuArrowUpRight className="h-4 w-4" aria-hidden="true" />
+              </a>
+            ) : (
+              <Button variant={paying || lapsed ? 'secondary' : 'primary'} onClick={() => openPricing()}>
+                {!paying && !lapsed && <LuZap className="h-4 w-4" aria-hidden="true" />}
+                {paying ? 'Change plan' : 'Upgrade'}
+              </Button>
+            )}
             {paying && !sub?.cancel_at_period_end && (
               <Button variant="ghost" onClick={() => setCancelling(true)}>Cancel plan</Button>
             )}
@@ -204,16 +218,18 @@ export function BillingSection() {
           </div>
         )}
 
-        <div className="grid gap-x-8 gap-y-4 border-t border-line-2 px-5 py-5 sm:grid-cols-2">
+        {!(ce && !ceIncluded) && <div className="grid gap-x-8 gap-y-4 border-t border-line-2 px-5 py-5 sm:grid-cols-2">
           {billing.usage.map((row) => <Meter key={row.key} label={row.label} used={row.used} limit={row.limit} per={row.per} />)}
           <Meter label="PDFs in Library" used={billing.library.used} limit={billing.library.limit} />
           <div className="flex items-center justify-between text-[14px]">
             <span className="text-ink-2">LaTeX export</span>
             {billing.limits.latex_export ? <StatusPill tone="positive">Included</StatusPill> : <StatusPill>Paid plans</StatusPill>}
           </div>
-        </div>
+        </div>}
       </Card>
 
+      {/* Plans sold on CitedEvidence: cards and invoices only for someone who paid here before. */}
+      {!(ce && !billing.cards.length && !billing.invoices.length) && (<>
       <Card>
         <CardHeader title="Payment methods" />
         {!billing.payments_enabled ? (
@@ -290,6 +306,7 @@ export function BillingSection() {
           </div>
         )}
       </Card>
+      </>)}
     </div>
   );
 }

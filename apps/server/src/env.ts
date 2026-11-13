@@ -63,6 +63,19 @@ export const env = {
   appleTeamId: read('APPLE_TEAM_ID'),
   appleKeyId: read('APPLE_KEY_ID'),
   applePrivateKey: read('APPLE_PRIVATE_KEY'),
+  /**
+   * Sign in with CitedEvidence (an OAuth app registered at <url>/oauth/register). With
+   * CITEDEVIDENCE_ACCOUNTS on, it is the only way in and plans come from CitedEvidence: people
+   * whose plan's tier is at least CITEDEVIDENCE_MIN_TIER (lite, pro or max) may use Videmak.
+   */
+  signinCitedevidence: read('SIGNIN_CITEDEVIDENCE', 'off'),
+  citedevidenceAccounts: read('CITEDEVIDENCE_ACCOUNTS', 'off'),
+  citedevidenceUrl: read('CITEDEVIDENCE_URL', 'https://citedevidence.com'),
+  citedevidenceClientId: read('CITEDEVIDENCE_CLIENT_ID'),
+  citedevidenceClientSecret: read('CITEDEVIDENCE_CLIENT_SECRET'),
+  citedevidenceMinTier: read('CITEDEVIDENCE_MIN_TIER', 'pro'),
+  /** Only when this site's PUBLIC_URL is not where browsers reach it (a test install). */
+  citedevidenceRedirectUri: read('CITEDEVIDENCE_REDIRECT_URI'),
   /** Cloudflare Turnstile on the sign-in form (optional: both keys turn it on). */
   signinTurnstile: read('SIGNIN_TURNSTILE', 'off'),
   turnstileSiteKey: read('TURNSTILE_SITE_KEY'),

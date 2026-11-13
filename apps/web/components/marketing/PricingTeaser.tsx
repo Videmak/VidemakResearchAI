@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import { LuArrowRight, LuCheck } from 'react-icons/lu';
 import type { PublicPlan } from '@/lib/billing';
+import type { CitedEvidencePlans } from '@/lib/signin';
 import { btnGhost, btnPrimary, container } from './styles';
 
 const dollars = (cents: number) => `$${(cents / 100).toLocaleString('en-US', { maximumFractionDigits: 2 })}`;
@@ -11,6 +12,21 @@ function price(plan: PublicPlan) {
   if (!plan.monthly_cents && !plan.yearly_cents) return { amount: '$0', unit: 'forever', note: 'No credit card' };
   if (plan.yearly_cents) return { amount: dollars(Math.round(plan.yearly_cents / 12)), unit: '/ month', note: `Billed yearly · ${dollars(plan.monthly_cents)} monthly` };
   return { amount: dollars(plan.monthly_cents), unit: '/ month', note: 'Billed monthly' };
+}
+
+/** Pricing on the landing page when plans are sold on CitedEvidence: where Videmak is included. */
+export function CitedEvidencePricing({ plans }: { plans: CitedEvidencePlans }) {
+  return (
+    <section id="pricing" aria-labelledby="pricing-title" className={`${container} scroll-mt-6 pt-24 text-center md:pt-36`}>
+      <h2 id="pricing-title" className="mx-auto max-w-[620px] text-balance text-[30px] font-semibold leading-[1.12] tracking-[-0.03em] text-ink md:text-[40px]">
+        Included with CitedEvidence
+      </h2>
+      <p className="mx-auto mt-4 max-w-[480px] text-balance text-[16px] leading-[1.6] text-muted md:text-[17px]">
+        Videmak comes with {plans.included_with}. One account and one plan cover both.
+      </p>
+      <a href={plans.pricing_url} className={`${btnPrimary} mt-7 h-11 px-5 text-[15px]`}>See CitedEvidence plans <LuArrowRight className="h-4 w-4" aria-hidden="true" /></a>
+    </section>
+  );
 }
 
 /** Pricing on the landing page: the live plans from Admin › Plans, three highlights each. */

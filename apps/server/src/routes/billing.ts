@@ -5,6 +5,7 @@ import { sql } from '../db.js';
 import { requireUser, type AppVariables } from '../auth.js';
 import { stripeClient } from '../lib/stripeBilling.js';
 import { loadPlans, publicPlan, usageSummary } from '../lib/plans.js';
+import { ceAccess, ceAccounts, ceLinks } from '../lib/citedevidence.js';
 import {
   completeCheckout, listCards, listInvoices, payInvoice, removeCard, renewPlan, setCancelAtPeriodEnd,
   setDefaultCard, startAddCard, startPlanPurchase,
@@ -79,12 +80,15 @@ export function billingRoutes() {
       invoices,
       open_invoices: invoices.filter((invoice) => invoice.status === 'open'),
       payments_enabled: payments,
+      // Accounts on CitedEvidence: its links and the plan last read from it.
+      citedevidence: ceAccounts() ? { ...ceLinks(), plan: (await ceAccess(accountId)).plan } : null,
     });
   });
 
   app.post('/checkout', async (c) => {
     const body = z.object({ plan: z.string().min(1).max(40), interval: z.enum(['month', 'year']) }).safeParse(await c.req.json().catch(() => ({})));
     if (!body.success) throw new HTTPException(422, { message: 'Choose a plan and monthly or yearly.' });
+    if (ceAccounts()) throw new HTTPException(409, { message: 'Plans are on CitedEvidence now. Choose one there.' });
     const stripe = stripeOr503();
     return c.json(await friendly(() => startPlanPurchase(stripe, accountOf(c), body.data.plan, body.data.interval)));
   });

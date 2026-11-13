@@ -10,7 +10,7 @@ import { documentToRead, membersOf, publicWordSettings } from '../lib/documentPa
 import { blocksToText, countWords } from '../lib/blocks.js';
 import { createVersion } from '../lib/versions.js';
 import { recordUsage } from '../usage.js';
-import { requireFeature } from '../lib/plans.js';
+import { requireAccess, requireFeature } from '../lib/plans.js';
 import { keyFromRef, openFile, readFileBytes, saveFile } from '../lib/storage.js';
 
 const ASSET_TYPES: Record<string, string> = { png: 'image/png', jpg: 'image/jpeg', jpeg: 'image/jpeg', gif: 'image/gif', webp: 'image/webp', svg: 'image/svg+xml' };
@@ -68,6 +68,7 @@ export function wordRoutes() {
   /** Opens a Word file as a new document, or replaces an open document's content with it. */
   app.post('/word/import', requireUser, async (c) => {
     const user = c.get('user')!;
+    await requireAccess(user.account_id);
     const form = await c.req.formData().catch(() => null);
     const file = form?.get('file');
     if (!(file instanceof File)) throw new HTTPException(422, { message: 'Choose a Word file.' });

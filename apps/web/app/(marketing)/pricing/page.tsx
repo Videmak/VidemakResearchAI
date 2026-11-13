@@ -1,5 +1,6 @@
+import { redirect } from 'next/navigation';
 import { CheckIcon, DashIcon } from '@/components/marketing/icons';
-import { comparisonRows, loadPublicPlans, pricingSummary, type CompareValue } from '@/components/marketing/plans';
+import { citedEvidencePricingUrl, comparisonRows, loadPublicPlans, pricingSummary, type CompareValue } from '@/components/marketing/plans';
 import { PricingPlans } from '@/components/marketing/PricingPlans';
 import { pageMetadata } from '@/components/marketing/seo';
 import { container } from '@/components/marketing/styles';
@@ -32,6 +33,9 @@ function Cell({ value }: { value: CompareValue }) {
 }
 
 export default async function PricingPage() {
+  // Plans sold on CitedEvidence: its pricing page is the one.
+  const elsewhere = await citedEvidencePricingUrl();
+  if (elsewhere) redirect(elsewhere);
   const plans = await loadPublicPlans();
   return (
     <>

@@ -8,13 +8,14 @@ import { optionalUser, requireUser, signSession, type AppVariables } from '../au
 import { rateLimit } from '../lib/rateLimit.js';
 import {
   appleNameFrom, finishOAuth, hashValue, linkIdentity, methodsFor, PROVIDER_NAMES, PROVIDERS, safeNext, startOAuth, takeFlow,
-  createFlow, userForProfile, type Provider,
+  createFlow, userForProfile, type Profile, type Provider,
 } from '../lib/signin.js';
+import { ceAccounts, ceFinish, ceLinks, refreshCeLink, saveCeLink } from '../lib/citedevidence.js';
 import { authenticationOptions, finishAuthentication, finishRegistration, registrationOptions } from '../lib/passkeys.js';
 import { activeUser, publicUser, signedIn } from '../lib/users.js';
 import { requireHuman, turnstileSiteKey } from '../lib/turnstile.js';
 
-const providerParam = z.enum(['google', 'microsoft', 'apple']);
+const providerParam = z.enum(['google', 'microsoft', 'apple', 'citedevidence']);
 const message = (error: unknown, fallback: string) => (error instanceof Error && error.message ? error.message : fallback).slice(0, 300);
 
 /** A same-site page that sends the browser on (the web app's proxy would follow a 302 itself). */
@@ -31,7 +32,11 @@ export function signinRoutes() {
   const app = new Hono<{ Variables: AppVariables }>();
 
   // password_reset: email is set up, so "Forgot password?" can send a link.
-  app.get('/methods', (c) => c.json({ ...methodsFor(), turnstile_site_key: turnstileSiteKey(), password_reset: mailReady(), support_email: env.supportEmail || null }));
+  // citedevidence_plans: where plans live and what is needed, when accounts are on CitedEvidence.
+  app.get('/methods', (c) => c.json({
+    ...methodsFor(), turnstile_site_key: turnstileSiteKey(), password_reset: mailReady(), support_email: env.supportEmail || null,
+    citedevidence_plans: ceAccounts() ? ceLinks() : null,
+  }));
 
   /** First step of the one sign-in form: what this email can do next. */
   app.post('/identify', rateLimit({ key: 'identify', limit: 30, windowSeconds: 600 }), async (c) => {
@@ -97,13 +102,24 @@ export function signinRoutes() {
     }
     if (typeof params.code !== 'string' || params.code.length > 4000) return fail('Sign-in did not finish. Try again.');
     try {
-      const profile = await finishOAuth(provider.data, flow, params.code, { appleName: appleNameFrom(params.user) });
+      let profile: Profile;
+      // CitedEvidence also says which plan the person has: kept with the link.
+      let keepPlan = async (_userId: string) => {};
+      if (provider.data === 'citedevidence') {
+        const { account, refreshToken } = await ceFinish(params.code, flow.data.verifier);
+        profile = { provider: 'citedevidence', subject: account.subject, email: account.email, emailVerified: account.emailVerified, name: account.name };
+        keepPlan = (userId) => saveCeLink(userId, account, refreshToken);
+      } else {
+        profile = await finishOAuth(provider.data, flow, params.code, { appleName: appleNameFrom(params.user) });
+      }
       if (connect) {
         if (!flow.user_id || !(await activeUser(flow.user_id))) return fail('Sign in to continue.');
         await linkIdentity(flow.user_id, profile);
+        await keepPlan(flow.user_id);
         return goTo(c, `/account#connected=${provider.data}`);
       }
       const { user } = await userForProfile(profile);
+      await keepPlan(user.id);
       const ticket = await createFlow('ticket', { next: safeNext(flow.data.next), binding: flow.data.binding }, { userId: user.id, ttlSeconds: 120 });
       return goTo(c, `/auth/finish#ticket=${ticket}`);
     } catch (error) {
@@ -127,6 +143,13 @@ export function signinRoutes() {
     if (!found) throw new HTTPException(401, { message: 'This account is turned off.' });
     const user = await signedIn(found);
     return c.json({ token: await signSession(user), user: await publicUser(user), next: safeNext(flow.data.next) });
+  });
+
+  /** "I've upgraded": reads the person's CitedEvidence plan again now (at most every 15 seconds). */
+  app.post('/citedevidence/refresh', requireUser, rateLimit({ key: 'ce-refresh', limit: 20, windowSeconds: 600 }), async (c) => {
+    const user = c.get('user')!;
+    await refreshCeLink(user.id, { force: true });
+    return c.json(await publicUser(user));
   });
 
   // Passkeys -------------------------------------------------------------------------------

@@ -12,6 +12,10 @@ export function ProviderLogo({ provider, size = 20 }: { provider: Provider; size
       </svg>
     );
   }
+  if (provider === 'citedevidence') {
+    // eslint-disable-next-line @next/next/no-img-element
+    return <img src="/brand/citedevidence-mark.png" width={size} height={size} alt="" aria-hidden="true" className="object-contain" />;
+  }
   if (provider === 'microsoft') {
     return (
       <svg viewBox="0 0 21 21" width={size} height={size} aria-hidden="true">

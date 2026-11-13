@@ -109,7 +109,7 @@ export function AuthEntry() {
       window.history.replaceState(null, '', `${window.location.pathname}${window.location.search}`);
     }
     setCanPasskey(passkeysSupported());
-    getMethods().then(setMethods).catch(() => setMethods({ password: true, passkeys: false, google: false, microsoft: false, apple: false }));
+    getMethods().then(setMethods).catch(() => setMethods({ password: true, passkeys: false, google: false, microsoft: false, apple: false, citedevidence: false }));
     // Coming back with the Back button from a provider restores this page as it was.
     const restored = (event: PageTransitionEvent) => { if (event.persisted) setBusy(null); };
     window.addEventListener('pageshow', restored);
@@ -282,6 +282,29 @@ export function AuthEntry() {
     : found.passkey_available && passkeysOn ? 'Sign in with your passkey below.'
     : `This account has no other way to sign in right now. ${methods?.support_email ? `Email ${methods.support_email} and we will help.` : 'Ask the site admin for help.'}`;
   const submitLabel = (idle: string, working: string) => (busy === 'check' ? 'Finishing security check…' : busy ? working : idle);
+
+  // Accounts live on CitedEvidence: one button, for signing in and signing up alike.
+  if (methods?.accounts === 'citedevidence') {
+    const plans = methods.citedevidence_plans;
+    return (
+      <div className="w-full">
+        <h1 className="text-center text-[28px] font-bold leading-[1.15] tracking-[-0.025em] sm:text-[30px]">Welcome to Videmak</h1>
+        <p className="mt-2 text-center text-[15px] text-muted">Sign in or create your account with CitedEvidence.</p>
+        <div className="mt-7 flex flex-col gap-4">
+          {error && <p role="alert" className="rounded-xl border border-red-200 bg-red-50 px-3.5 py-2.5 text-sm font-medium text-red-700">{error}</p>}
+          <OptionButton icon={<ProviderLogo provider="citedevidence" size={22} />} verb="Continue with" name="CitedEvidence" compact={false}
+            busy={busy === 'citedevidence' ? 'Opening CitedEvidence…' : undefined} disabled={busy !== null} onClick={() => void goProvider('citedevidence')} />
+          {plans && (
+            <p className="text-center text-[13.5px] leading-relaxed text-muted">
+              Videmak is included with {plans.included_with}.{' '}
+              <a href={plans.pricing_url} target="_blank" rel="noopener" className={`rounded font-semibold text-brand hover:text-brand-600 ${focusRing}`}>See plans</a>
+            </p>
+          )}
+        </div>
+        <LegalNote action="continuing" />
+      </div>
+    );
+  }
 
   return (
     <div className="w-full">

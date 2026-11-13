@@ -3,16 +3,22 @@ import Link from 'next/link';
 import { LuArrowRight, LuBlocks, LuGitPullRequest, LuGithub, LuPlus, LuServer, LuShieldCheck, LuSparkles, LuSquarePen } from 'react-icons/lu';
 import { AutocompleteVisual } from '@/components/marketing/LandingVisuals';
 import { AuthAware } from '@/components/marketing/AuthAware';
-import { PricingTeaser } from '@/components/marketing/PricingTeaser';
-import { loadPublicPlans } from '@/components/marketing/plans';
+import { CitedEvidencePricing, PricingTeaser } from '@/components/marketing/PricingTeaser';
+import { loadCitedEvidencePlans, loadPublicPlans } from '@/components/marketing/plans';
+import type { CitedEvidencePlans } from '@/lib/signin';
 import { pageMetadata } from '@/components/marketing/seo';
 import { btnGhost, btnPrimary, container, focusRing, GITHUB_URL } from '@/components/marketing/styles';
 import { FEATURES, FinalCta, STEPS, StartButton, h2, isSignedIn, lead } from '@/components/marketing/landing';
 
 const DESCRIPTION =
-  'Write your paper faster, with citations you can trust. Autocomplete with real references, 250M+ papers, AI review before you submit, and Word and LaTeX export. Free to start.';
+  'Write your paper faster, with citations you can trust. Autocomplete with real references, 250M+ papers, AI review before you submit, and Word and LaTeX export.';
+// With plans on CitedEvidence there is no free plan to mention.
+const description = (citedevidence: CitedEvidencePlans | null) =>
+  citedevidence ? `${DESCRIPTION} Included with ${citedevidence.included_with}.` : `${DESCRIPTION} Free to start.`;
 
-export const metadata = pageMetadata({ title: 'Videmak Research AI — the AI editor for academic writing', absolute: true, path: '/editor-home', description: DESCRIPTION });
+export async function generateMetadata() {
+  return pageMetadata({ title: 'Videmak Research AI — the AI editor for academic writing', absolute: true, path: '/editor-home', description: description(await loadCitedEvidencePlans()) });
+}
 
 // Rendered per request (signed-in visitors see Dashboard); the plans themselves are cached for 5 minutes.
 export const dynamic = 'force-dynamic';
@@ -41,22 +47,29 @@ const OPEN_SOURCE = [
   { icon: <LuGitPullRequest className="h-5 w-5" />, title: 'Make it better', body: 'Report a bug, suggest a feature or send a pull request.', href: `${GITHUB_URL}/issues`, link: 'Open an issue' },
 ];
 
-const STRUCTURED_DATA = [
+/** With plans on CitedEvidence: how to get Videmak, and where the plan is managed, instead of the free plan and cancelling. */
+const faqFor = (citedevidence: CitedEvidencePlans | null): typeof FAQ => (!citedevidence ? FAQ : FAQ.map((item) => (
+  item.q === 'Is it free to start?' ? { q: 'How do I get Videmak?', a: `Videmak is included with ${citedevidence.included_with}. Sign in with your CitedEvidence account.` }
+    : item.q === 'Can I cancel any time?' ? { q: 'Where do I manage my plan?', a: 'On CitedEvidence, from your profile. One account and one plan cover both.' }
+    : item
+)));
+
+const structuredData = (citedevidence: CitedEvidencePlans | null, faq: typeof FAQ) => [
   {
     '@context': 'https://schema.org',
     '@type': 'SoftwareApplication',
     name: 'Videmak Research AI',
     applicationCategory: 'EducationalApplication',
     operatingSystem: 'Web, iOS, Android, Windows, macOS',
-    description: DESCRIPTION,
-    offers: { '@type': 'Offer', price: '0', priceCurrency: 'USD' },
+    description: description(citedevidence),
+    ...(citedevidence ? {} : { offers: { '@type': 'Offer', price: '0', priceCurrency: 'USD' } }),
     license: 'https://opensource.org/licenses/MIT',
     sameAs: [GITHUB_URL],
   },
   {
     '@context': 'https://schema.org',
     '@type': 'FAQPage',
-    mainEntity: FAQ.map((item) => ({ '@type': 'Question', name: item.q, acceptedAnswer: { '@type': 'Answer', text: item.a } })),
+    mainEntity: faq.map((item) => ({ '@type': 'Question', name: item.q, acceptedAnswer: { '@type': 'Answer', text: item.a } })),
   },
 ];
 
@@ -64,10 +77,11 @@ const more = `inline-flex items-center gap-1.5 rounded text-[14.5px] font-medium
 
 /** The AI editor's landing page (the site's home is the classic Videmak page). */
 export default async function LandingPage() {
-  const [plans, signedIn] = await Promise.all([loadPublicPlans(), isSignedIn()]);
+  const [plans, signedIn, citedevidence] = await Promise.all([loadPublicPlans(), isSignedIn(), loadCitedEvidencePlans()]);
+  const faq = faqFor(citedevidence);
   return (
     <>
-      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(STRUCTURED_DATA) }} />
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(structuredData(citedevidence, faq)) }} />
 
       {/* Hero */}
       <section aria-labelledby="hero-title" className="pt-14 text-center md:pt-20" style={{ background: 'radial-gradient(900px 380px at 50% -8%, #eff6ff 0%, rgba(239,246,255,0) 70%)' }}>
@@ -83,7 +97,9 @@ export default async function LandingPage() {
             Autocomplete with real references, 250M+ papers to cite and an AI review before you submit. Export to Word or LaTeX.
           </p>
           <div className="mt-7 flex justify-center"><StartButton signedIn={signedIn} /></div>
-          <AuthAware initial={signedIn} signedIn={null} signedOut={<p className="mt-3 text-[13px] text-subtle">Free plan · No credit card</p>} />
+          <AuthAware initial={signedIn} signedIn={null} signedOut={(
+            <p className="mt-3 text-[13px] text-subtle">{citedevidence ? `Included with ${citedevidence.included_with}` : 'Free plan · No credit card'}</p>
+          )} />
           <a href={GITHUB_URL} target="_blank" rel="noreferrer" className={`mt-2 inline-flex items-center gap-1.5 rounded text-[13px] font-medium text-muted transition-colors hover:text-ink ${focusRing}`}>
             <LuGithub className="h-3.5 w-3.5" aria-hidden="true" /> Open source on GitHub · MIT
           </a>
@@ -199,7 +215,7 @@ export default async function LandingPage() {
         </div>
       </section>
 
-      <PricingTeaser plans={plans} />
+      {citedevidence ? <CitedEvidencePricing plans={citedevidence} /> : <PricingTeaser plans={plans} />}
 
       {/* FAQ */}
       <section id="faq" aria-labelledby="faq-title" className={`${container} scroll-mt-6 pt-24 md:pt-36`}>
@@ -211,7 +227,7 @@ export default async function LandingPage() {
             </p>
           </div>
           <div className="border-t border-line">
-            {FAQ.map((item) => (
+            {faq.map((item) => (
               <details key={item.q} className="group border-b border-line">
                 <summary className={`flex cursor-pointer list-none items-center gap-4 py-5 text-[16px] font-medium text-ink [&::-webkit-details-marker]:hidden ${focusRing}`}>
                   <h3 className="flex-1">{item.q}</h3>

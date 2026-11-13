@@ -5,11 +5,19 @@ import { api, markSignedIn, setSession, type SessionUser } from '@/lib/session';
 
 /** Sign-in methods in the browser: which exist, Google/Microsoft/Apple round trips, passkeys. */
 
-export type Provider = 'google' | 'microsoft' | 'apple';
-/** `turnstile_site_key`: set when the sign-in form shows Cloudflare's security check; `password_reset`: email is set up. */
-export type Methods = { password: boolean; passkeys: boolean; turnstile_site_key?: string | null; password_reset?: boolean; support_email?: string | null } & Record<Provider, boolean>;
-export const PROVIDERS: Provider[] = ['google', 'microsoft', 'apple'];
-export const PROVIDER_NAMES: Record<Provider, string> = { google: 'Google', microsoft: 'Microsoft', apple: 'Apple' };
+export type Provider = 'google' | 'microsoft' | 'apple' | 'citedevidence';
+/** Where plans live when accounts are on CitedEvidence, and which plan includes Videmak. */
+export type CitedEvidencePlans = { name: string; url: string; pricing_url: string; manage_url: string; included_with: string };
+/**
+ * `turnstile_site_key`: set when the sign-in form shows Cloudflare's security check; `password_reset`: email is set up;
+ * `accounts`: 'citedevidence' when CitedEvidence is the only way in and sells the plans (`citedevidence_plans`).
+ */
+export type Methods = {
+  password: boolean; passkeys: boolean; turnstile_site_key?: string | null; password_reset?: boolean; support_email?: string | null;
+  accounts?: 'citedevidence' | null; citedevidence_plans?: CitedEvidencePlans | null;
+} & Record<Provider, boolean>;
+export const PROVIDERS: Provider[] = ['google', 'microsoft', 'apple', 'citedevidence'];
+export const PROVIDER_NAMES: Record<Provider, string> = { google: 'Google', microsoft: 'Microsoft', apple: 'Apple', citedevidence: 'CitedEvidence' };
 
 let methodsRequest: Promise<Methods> | null = null;
 export function getMethods(): Promise<Methods> {

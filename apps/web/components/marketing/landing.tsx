@@ -3,6 +3,7 @@
  * features with their visuals, the three steps, the comparison band, the writing types and
  * the closing call to action. Type scale: 52/34 hero, 40/30 sections (desktop/phone).
  */
+import { loadCitedEvidencePlans } from './plans';
 import Link from 'next/link';
 import type { ReactNode } from 'react';
 import { cookies } from 'next/headers';
@@ -26,8 +27,9 @@ export async function isSignedIn() {
   return (await cookies()).get('videmak_signed_in')?.value === '1';
 }
 
-/** "Start writing free", or "Open your documents" for someone signed in. */
-export function StartButton({ signedIn, label = 'Start writing free' }: { signedIn: boolean; label?: string }) {
+/** "Start writing free" ("Start writing" with plans on CitedEvidence), or "Open your documents" for someone signed in. */
+export async function StartButton({ signedIn, label }: { signedIn: boolean; label?: string }) {
+  label ??= (await loadCitedEvidencePlans()) ? 'Start writing' : 'Start writing free';
   return (
     <AuthAware
       initial={signedIn}
@@ -215,11 +217,14 @@ export function AudienceSection() {
   );
 }
 
-export function FinalCta({ signedIn }: { signedIn: boolean }) {
+export async function FinalCta({ signedIn }: { signedIn: boolean }) {
+  const citedevidence = await loadCitedEvidencePlans();
   return (
     <section aria-labelledby="cta-title" className={`${container} pb-20 pt-28 text-center md:pb-28 md:pt-36`}>
       <h2 id="cta-title" className="mx-auto max-w-[640px] text-balance text-[32px] font-semibold leading-[1.08] tracking-[-0.035em] text-ink md:text-[48px]">Your next draft starts here</h2>
-      <p className={`mx-auto mt-4 max-w-[440px] ${lead}`}>Free to start. Upgrade when Videmak is saving you hours.</p>
+      <p className={`mx-auto mt-4 max-w-[440px] ${lead}`}>
+        {citedevidence ? `Included with ${citedevidence.included_with}.` : 'Free to start. Upgrade when Videmak is saving you hours.'}
+      </p>
       <div className="mt-7 flex flex-wrap justify-center gap-3">
         <StartButton signedIn={signedIn} />
         <Link href="/pricing" className={`${btnGhost} h-11 rounded-[10px] px-5 text-[15px]`}>See pricing</Link>

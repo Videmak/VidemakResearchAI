@@ -31,7 +31,8 @@ function isCurrent(pathname: string, href: string) {
 }
 
 /** Desktop links next to the logo (≥768px) and the phone menu button + full-screen sheet (<768px). */
-export function SiteNav({ signedIn }: { signedIn: boolean }) {
+export function SiteNav({ signedIn, plansOnCitedEvidence = false }: { signedIn: boolean; plansOnCitedEvidence?: boolean }) {
+  const links = plansOnCitedEvidence ? NAV_LINKS.map((link) => (link.href === '/pricing' ? { ...link, hint: 'CitedEvidence plans' } : link)) : NAV_LINKS;
   const pathname = usePathname() || '/';
   const [open, setOpen] = useState(false);
   const dialogRef = useRef<HTMLDialogElement>(null);
@@ -59,7 +60,7 @@ export function SiteNav({ signedIn }: { signedIn: boolean }) {
   return (
     <>
       <nav aria-label="Main" className="ml-10 hidden items-center gap-[26px] text-[14px] font-medium md:flex">
-        {NAV_LINKS.map((link) => {
+        {links.map((link) => {
           const current = isCurrent(pathname, link.href);
           return (
             <Link
@@ -130,7 +131,7 @@ export function SiteNav({ signedIn }: { signedIn: boolean }) {
             </button>
           </div>
           <nav aria-label="Main" className="grid gap-1 px-3 pt-2">
-            {NAV_LINKS.map(({ Icon, ...link }) => {
+            {links.map(({ Icon, ...link }) => {
               const current = isCurrent(pathname, link.href);
               return (
                 <Link

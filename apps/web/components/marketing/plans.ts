@@ -1,4 +1,5 @@
 import type { CountLimit, PublicPlan } from '@/lib/billing';
+import type { CitedEvidencePlans } from '@/lib/signin';
 
 /**
  * /pricing reads the plans from the API (Admin › Plans is the one place to change them).
@@ -16,6 +17,19 @@ export async function loadPublicPlans(): Promise<PublicPlan[] | null> {
     return null; // e.g. while building: the page fills in on the client and on the next revalidation
   }
 }
+
+/** CitedEvidence's plan links when accounts and plans live there (null: plans are sold here). */
+export async function loadCitedEvidencePlans(): Promise<CitedEvidencePlans | null> {
+  try {
+    const response = await fetch(`${serverUrl}/api/auth/methods`, { next: { revalidate: 60 } });
+    if (!response.ok) return null;
+    return ((await response.json()) as { citedevidence_plans?: CitedEvidencePlans | null }).citedevidence_plans ?? null;
+  } catch {
+    return null;
+  }
+}
+
+export const citedEvidencePricingUrl = async () => (await loadCitedEvidencePlans())?.pricing_url ?? null;
 
 /** A cell of the comparison table: text, or true (included) / false (not included). */
 export type CompareValue = string | boolean;

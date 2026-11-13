@@ -4,10 +4,24 @@ import { LuArrowRight } from 'react-icons/lu';
 import { Logo } from '@/components/Logo';
 import { AuthAware } from './AuthAware';
 import { SiteNav } from './SiteNav';
+import { loadCitedEvidencePlans } from './plans';
 import { container, focusRing } from './styles';
+import type { CitedEvidencePlans } from '@/lib/signin';
 
-/** Dark strip above the header for people who are not signed in. */
-function FreePlanStrip() {
+/** Dark strip above the header for people who are not signed in (plans on CitedEvidence: where Videmak is included). */
+function FreePlanStrip({ citedevidence }: { citedevidence: CitedEvidencePlans | null }) {
+  if (citedevidence) {
+    return (
+      <div className="bg-ink text-[12.5px] text-slate-300 md:text-[13px]">
+        <div className={`${container} flex h-[34px] items-center justify-center gap-2.5 whitespace-nowrap md:h-[38px]`}>
+          <span className="truncate">Included with <span className="font-semibold text-white">{citedevidence.included_with}</span></span>
+          <a href={citedevidence.pricing_url} className={`inline-flex shrink-0 items-center gap-1 rounded font-semibold text-blue-300 transition-colors hover:text-blue-200 ${focusRing}`}>
+            See plans <LuArrowRight className="size-3.5" aria-hidden="true" />
+          </a>
+        </div>
+      </div>
+    );
+  }
   return (
     <div className="bg-ink text-[12.5px] text-slate-300 md:text-[13px]">
       <div className={`${container} flex h-[34px] items-center justify-center gap-2.5 whitespace-nowrap md:h-[38px]`}>
@@ -26,16 +40,17 @@ function FreePlanStrip() {
 export async function SiteHeader() {
   // Set by the app at sign-in (not a secret): lets the first render show Dashboard without a flash.
   const signedIn = (await cookies()).get('videmak_signed_in')?.value === '1';
+  const citedevidence = await loadCitedEvidencePlans();
   return (
     <>
-      <AuthAware initial={signedIn} signedIn={null} signedOut={<FreePlanStrip />} />
+      <AuthAware initial={signedIn} signedIn={null} signedOut={<FreePlanStrip citedevidence={citedevidence} />} />
       <header className="border-b border-line bg-white">
         <div className={`${container} flex h-14 items-center md:h-16`}>
           <Link href="/editor-home" className={`shrink-0 rounded-lg ${focusRing}`}>
             <Logo size={26} />
             <span className="sr-only">Videmak home</span>
           </Link>
-          <SiteNav signedIn={signedIn} />
+          <SiteNav signedIn={signedIn} plansOnCitedEvidence={Boolean(citedevidence)} />
         </div>
       </header>
     </>

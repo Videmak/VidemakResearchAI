@@ -3,7 +3,12 @@
 import { useEffect, useState, useSyncExternalStore } from 'react';
 
 /** The signed-in person, as returned by the API. */
-export type SessionUser = { id: string; email: string; full_name: string | null; plan?: string; plan_name?: string; is_admin?: boolean };
+/** has_access: false only when accounts are on CitedEvidence and the person has no plan there that includes Videmak. */
+export type SessionUser = {
+  id: string; email: string; full_name: string | null; plan?: string; plan_name?: string; is_admin?: boolean; has_access?: boolean;
+  /** Accounts on CitedEvidence: whether they have signed in with it (and so have a plan to read). */
+  citedevidence_linked?: boolean;
+};
 
 const TOKEN_KEY = 'videmak_token';
 const USER_KEY = 'videmak_user';

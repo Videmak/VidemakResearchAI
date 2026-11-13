@@ -10,6 +10,7 @@ import { EditorHost } from '@/components/app/EditorHost';
 import { MobileTabBar } from '@/components/app/MobileTabBar';
 import { api, getToken, useSession } from '@/lib/session';
 import { openPricing } from '@/lib/billing';
+import { CitedEvidencePlanPanel, useCitedEvidencePlans } from '@/components/billing/CitedEvidencePlans';
 import { LuZap } from 'react-icons/lu';
 
 // Library and Find papers slide in from the left in place of the menu; AI Chat opens on the right.
@@ -58,7 +59,9 @@ export function AppFrame({ title, actions, children, wide = false }: { title: st
   const { user } = useSession();
   const recent = useRecent(Boolean(user));
   const name = user?.full_name || user?.email?.split('@')[0] || '';
-  const isFree = Boolean(user) && (!user?.plan || user.plan === 'free');
+  // 'none': accounts on CitedEvidence and no plan there that includes Videmak.
+  const isFree = Boolean(user) && (!user?.plan || user.plan === 'free' || user.plan === 'none');
+  const citedevidence = useCitedEvidencePlans();
   const sideloads = useSideloads();
   const itemClass = (active: boolean) =>
     `flex h-10 w-full items-center gap-[11px] rounded-[10px] px-2.5 text-left text-[15px] font-medium ${active ? 'bg-white text-ink shadow-[0_1px_2px_rgba(15,23,42,.06),0_0_0_1px_var(--color-line)]' : 'text-ink-2 hover:bg-white/70'}`;
@@ -101,7 +104,7 @@ export function AppFrame({ title, actions, children, wide = false }: { title: st
         {item('/help', 'Help', ICONS.help)}
         {isFree && (
           <div className="mt-2 flex items-center justify-between rounded-[10px] bg-white/70 px-2.5 py-2">
-            <span className="text-[13px] text-muted">{user?.plan_name || 'Free'} plan</span>
+            <span className="text-[13px] text-muted">{user?.plan === 'none' ? 'No plan' : `${user?.plan_name || 'Free'} plan`}</span>
             <button type="button" onClick={() => openPricing()} className="text-[13px] font-semibold text-brand hover:underline">Upgrade</button>
           </div>
         )}
@@ -126,6 +129,11 @@ export function AppFrame({ title, actions, children, wide = false }: { title: st
             {actions}
           </div>
           {actions && <div className="mb-4 flex flex-wrap gap-2 md:hidden">{actions}</div>}
+          {user?.has_access === false && citedevidence && (
+            <div className="mb-6 rounded-2xl border border-brand-100 bg-brand-50 p-4 sm:p-5">
+              <CitedEvidencePlanPanel plans={citedevidence} compact />
+            </div>
+          )}
           {children}
         </div>
         <MobileTabBar />

@@ -3,6 +3,7 @@ import { createMiddleware } from 'hono/factory';
 import { HTTPException } from 'hono/http-exception';
 import { sql } from '../db.js';
 import { env } from '../env.js';
+import { ceAccess, ceAccounts, ceLinks } from './citedevidence.js';
 
 /**
  * Plans and what each one allows. Plans live in the database (Admin › Plans); the limit KEYS
@@ -198,7 +199,48 @@ export type AccountPlan = {
 /** Subscriptions in these states keep their plan (past_due: Stripe is still retrying the card). */
 export const LIVE_STATUSES = ['active', 'trialing', 'past_due'];
 
-/** The plan an account has right now: a live subscription, a plan an admin gave, a carried-over plan, or the default. */
+const NO_PLAN_ID = 'none';
+const CITEDEVIDENCE_PLAN_ID = 'citedevidence';
+const ZERO: CountLimit = { amount: 0, per: 'month' };
+const NO_LIMITS: Limits = {
+  autocomplete: ZERO, ai_edit: ZERO, chat: ZERO, review: ZERO, write: ZERO,
+  library_pdfs: 0, upload_mb: 0, upload_batch: 0, latex_export: false, zotero_import: false, mendeley_import: false,
+};
+const planShape = (id: string, name: string, tagline: string): PlanRow => ({
+  id, name, tagline, sort_order: 90, is_default: false, is_public: false, featured: false, checkout: 'contact', contact_url: null,
+  monthly_cents: 0, yearly_cents: 0, currency: 'usd', trial_days: 0, limits: {},
+  stripe_product_id: null, stripe_monthly_price_id: null, stripe_yearly_price_id: null, stripe_mode: null,
+});
+/** With accounts on CitedEvidence, someone without the plan it needs: nothing that costs AI or storage. */
+const NO_PLAN = planShape(NO_PLAN_ID, 'No plan', 'Videmak is included with CitedEvidence plans');
+
+/** The hidden plan of people Videmak lets in through CitedEvidence (its limits are edited in Admin › Plans). */
+async function citedevidencePlan(plans: PlanRow[]) {
+  const found = plans.find((plan) => plan.id === CITEDEVIDENCE_PLAN_ID);
+  if (found) return found;
+  const row = planShape(CITEDEVIDENCE_PLAN_ID, 'CitedEvidence', 'Included with your CitedEvidence plan');
+  await sql`
+    insert into plans (id, name, tagline, sort_order, is_default, is_public, featured, checkout, limits)
+    values (${row.id}, ${row.name}, ${row.tagline}, ${row.sort_order}, false, false, false, 'contact', ${sql.json({})})
+    on conflict (id) do nothing`;
+  forgetPlans();
+  return row;
+}
+
+export const isNoPlan = (plan: Pick<PlanRow, 'id'>) => plan.id === NO_PLAN_ID;
+
+/** Refuses (402) people who may not use Videmak: accounts on CitedEvidence without the plan it needs. */
+export async function requireAccess(accountId: string) {
+  const { plan } = await effectivePlan(accountId);
+  if (isNoPlan(plan)) throw new PlanLimitError(noPlanMessage(), 'write', plan.id);
+}
+
+const noPlanMessage = () => `Videmak is included with ${ceLinks().included_with}. Choose a plan on CitedEvidence to start writing.`;
+
+/**
+ * The plan an account has right now: a live subscription, a plan an admin gave, a carried-over plan,
+ * then (accounts on CitedEvidence) the CitedEvidence plan or none, else the default.
+ */
 export async function effectivePlan(accountId: string): Promise<{ plan: PlanRow; limits: Limits; account: AccountPlan }> {
   const { plans } = await loadPlans();
   const [account] = await sql<AccountPlan[]>`
@@ -211,6 +253,13 @@ export async function effectivePlan(accountId: string): Promise<{ plan: PlanRow;
   const chosen = account && (account.plan_source === 'admin' || legacyActive || (account.plan_source === 'stripe' && LIVE_STATUSES.includes(account.plan_status)))
     ? plans.find((plan) => plan.id === account.plan_id)
     : undefined;
+  if (!chosen && ceAccounts()) {
+    // Subscriptions bought here keep working until they end; otherwise CitedEvidence decides.
+    const access = await ceAccess(accountId);
+    if (!access.allowed) return { plan: NO_PLAN, limits: NO_LIMITS, account };
+    const plan = await citedevidencePlan(plans);
+    return { plan, limits: normalizeLimits(plan.limits), account };
+  }
   const plan = chosen ?? fallback;
   // No plans at all (a fresh install before seeding): nothing is limited.
   return { plan, limits: plan ? normalizeLimits(plan.limits) : UNLIMITED_LIMITS, account };
@@ -225,6 +274,7 @@ export class PlanLimitError extends HTTPException {
 }
 
 function limitMessage(key: LimitKey, plan: PlanRow, limit: CountLimit | number) {
+  if (isNoPlan(plan)) return noPlanMessage();
   const noun = LIMIT_DEFS[key].noun;
   if (typeof limit === 'number') return `Your ${plan.name} plan includes ${limit.toLocaleString('en-US')} ${noun}. Upgrade for more.`;
   if (limit.amount === 0) return `${LIMIT_DEFS[key].label} are not part of the ${plan.name} plan. Upgrade to use them.`;
@@ -256,7 +306,7 @@ export async function countUse(accountId: string, key: LimitKey, amount = 1) {
 /** Refuses (402) a feature the plan does not include. */
 export async function requireFeature(accountId: string, key: FeatureKey) {
   const { plan, limits } = await effectivePlan(accountId);
-  if (!limits[key]) throw new PlanLimitError(`${LIMIT_DEFS[key].label} is part of the paid plans. Upgrade to use it.`, key, plan.id);
+  if (!limits[key]) throw new PlanLimitError(isNoPlan(plan) ? noPlanMessage() : `${LIMIT_DEFS[key].label} is part of the paid plans. Upgrade to use it.`, key, plan.id);
 }
 
 /** Refuses (402) one more Library PDF when the plan's total is reached. */
@@ -289,6 +339,7 @@ export async function checkUploadSize(accountId: string, bytes: number) {
   const { plan, limits } = await effectivePlan(accountId);
   if (bytes > HARD_UPLOAD_MB * 1024 * 1024) throw new HTTPException(413, { message: `PDFs can be up to ${HARD_UPLOAD_MB} MB.` });
   if (limits.upload_mb !== null && bytes > limits.upload_mb * 1024 * 1024) {
+    if (isNoPlan(plan)) throw new PlanLimitError(noPlanMessage(), 'upload_mb', plan.id);
     throw new PlanLimitError(`Your ${plan.name} plan takes PDFs up to ${limits.upload_mb} MB. Upgrade for larger files.`, 'upload_mb', plan.id);
   }
 }

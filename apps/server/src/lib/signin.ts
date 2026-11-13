@@ -4,37 +4,45 @@ import { sql } from '../db.js';
 import type { AuthUser } from '../auth.js';
 import { settings, type EffectiveSettings } from './settings.js';
 import { activeUser, createUser } from './users.js';
+import { ceAccounts, ceAuthorizeUrl, ceConfigured, ceRedirectUri, ceUsable } from './citedevidence.js';
 
 /**
  * Sign-in methods: which are usable (Admin › Sign-in switches + keys), Google / Microsoft /
- * Apple through OpenID Connect (state, nonce, PKCE where supported), one-time flows kept in
- * the database, and one account per email (a provider's verified email links to it).
+ * Apple through OpenID Connect (state, nonce, PKCE where supported), CitedEvidence through
+ * OAuth (lib/citedevidence.ts), one-time flows kept in the database, and one account per
+ * email (a provider's verified email links to it). With accounts on CitedEvidence, it is the
+ * only way in.
  */
 
-export type Provider = 'google' | 'microsoft' | 'apple';
-export const PROVIDERS: Provider[] = ['google', 'microsoft', 'apple'];
-export type Methods = { password: boolean; passkeys: boolean } & Record<Provider, boolean>;
+export type Provider = 'google' | 'microsoft' | 'apple' | 'citedevidence';
+type OidcProvider = Exclude<Provider, 'citedevidence'>;
+export const PROVIDERS: Provider[] = ['google', 'microsoft', 'apple', 'citedevidence'];
+export type Methods = { password: boolean; passkeys: boolean; accounts: 'citedevidence' | null } & Record<Provider, boolean>;
 
 const isOn = (value: string | undefined) => (value ?? '').trim().toLowerCase() !== 'off';
 
 export function providerConfigured(provider: Provider, s: EffectiveSettings = settings()) {
+  if (provider === 'citedevidence') return ceConfigured(s);
   if (provider === 'google') return Boolean(s.googleClientId && s.googleClientSecret);
   if (provider === 'microsoft') return Boolean(s.microsoftClientId && s.microsoftClientSecret);
   return Boolean(s.appleServicesId && s.appleTeamId && s.appleKeyId && s.applePrivateKey);
 }
 
-const SWITCH: Record<Provider, 'signinGoogle' | 'signinMicrosoft' | 'signinApple'> = { google: 'signinGoogle', microsoft: 'signinMicrosoft', apple: 'signinApple' };
+const SWITCH: Record<OidcProvider, 'signinGoogle' | 'signinMicrosoft' | 'signinApple'> = { google: 'signinGoogle', microsoft: 'signinMicrosoft', apple: 'signinApple' };
 
-/** A provider shows only when it is switched on AND has its keys. */
+/** A provider shows only when it is switched on AND has its keys (only CitedEvidence, with accounts there). */
 export function providerUsable(provider: Provider, s: EffectiveSettings = settings()) {
+  if (provider === 'citedevidence') return ceUsable(s);
+  if (ceAccounts(s)) return false;
   return isOn(s[SWITCH[provider]]) && providerConfigured(provider, s);
 }
 
 /** Usable methods. Email and password stays on when nothing else can create an account. */
 export function methodsFor(s: EffectiveSettings = settings()): Methods {
   const providers = Object.fromEntries(PROVIDERS.map((provider) => [provider, providerUsable(provider, s)])) as Record<Provider, boolean>;
+  if (ceAccounts(s)) return { password: false, passkeys: false, accounts: 'citedevidence', ...providers };
   const anyProvider = PROVIDERS.some((provider) => providers[provider]);
-  return { password: isOn(s.signinPassword) || !anyProvider, passkeys: isOn(s.signinPasskeys), ...providers };
+  return { password: isOn(s.signinPassword) || !anyProvider, passkeys: isOn(s.signinPasskeys), accounts: null, ...providers };
 }
 
 /** For the admin page: turning email and password off needs a provider that can sign people up. */
@@ -81,7 +89,7 @@ export function safeNext(raw: unknown): string {
 
 const MICROSOFT_CONSUMER_TENANT = '9188040d-6c67-4c5b-b112-36a304b66dad';
 
-const ENDPOINTS: Record<Provider, { authorize: string; token: string; jwks: string; scope: string; formPost: boolean; pkce: boolean }> = {
+const ENDPOINTS: Record<OidcProvider, { authorize: string; token: string; jwks: string; scope: string; formPost: boolean; pkce: boolean }> = {
   google: {
     authorize: 'https://accounts.google.com/o/oauth2/v2/auth', token: 'https://oauth2.googleapis.com/token',
     jwks: 'https://www.googleapis.com/oauth2/v3/certs', scope: 'openid email profile', formPost: false, pkce: true,
@@ -97,8 +105,8 @@ const ENDPOINTS: Record<Provider, { authorize: string; token: string; jwks: stri
   },
 };
 
-const jwksCache = new Map<Provider, ReturnType<typeof createRemoteJWKSet>>();
-const jwks = (provider: Provider) => {
+const jwksCache = new Map<OidcProvider, ReturnType<typeof createRemoteJWKSet>>();
+const jwks = (provider: OidcProvider) => {
   if (!jwksCache.has(provider)) jwksCache.set(provider, createRemoteJWKSet(new URL(ENDPOINTS[provider].jwks)));
   return jwksCache.get(provider)!;
 };
@@ -108,9 +116,10 @@ const jwks = (provider: Provider) => {
  * with Google (a proxy must then send that path to /api/auth/oauth/google/callback).
  */
 export const redirectUri = (provider: Provider, s: EffectiveSettings = settings()) =>
-  (provider === 'google' && s.googleRedirectUri) || `${s.publicUrl.replace(/\/+$/, '')}/api/auth/oauth/${provider}/callback`;
+  provider === 'citedevidence' ? ceRedirectUri(s)
+    : (provider === 'google' && s.googleRedirectUri) || `${s.publicUrl.replace(/\/+$/, '')}/api/auth/oauth/${provider}/callback`;
 
-function clientId(provider: Provider, s: EffectiveSettings) {
+function clientId(provider: OidcProvider, s: EffectiveSettings) {
   return provider === 'google' ? s.googleClientId : provider === 'microsoft' ? s.microsoftClientId : s.appleServicesId;
 }
 
@@ -129,7 +138,7 @@ async function appleClientSecret(s: EffectiveSettings) {
     .setIssuedAt().setExpirationTime('10m').sign(key);
 }
 
-async function clientSecret(provider: Provider, s: EffectiveSettings) {
+async function clientSecret(provider: OidcProvider, s: EffectiveSettings) {
   return provider === 'google' ? s.googleClientSecret : provider === 'microsoft' ? s.microsoftClientSecret : appleClientSecret(s);
 }
 
@@ -139,9 +148,11 @@ export async function startOAuth(provider: Provider, input: { mode: 'signin' | '
   if (!providerUsable(provider, s)) throw new Error('This sign-in method is not available.');
   const verifier = randomId(32);
   const nonce = randomId(16);
+  // CitedEvidence may have someone create an account and confirm its email on the way: allow 30 minutes.
   const state = await createFlow('oauth', {
     verifier, nonce, mode: input.mode, next: safeNext(input.next), binding: input.binding ? hashValue(input.binding) : null,
-  }, { provider, userId: input.userId ?? null, ttlSeconds: 600 });
+  }, { provider, userId: input.userId ?? null, ttlSeconds: provider === 'citedevidence' ? 1800 : 600 });
+  if (provider === 'citedevidence') return ceAuthorizeUrl(state, verifier, s);
   const endpoint = ENDPOINTS[provider];
   const url = new URL(endpoint.authorize);
   url.searchParams.set('client_id', clientId(provider, s));
@@ -162,7 +173,7 @@ export async function startOAuth(provider: Provider, input: { mode: 'signin' | '
 export type Profile = { provider: Provider; subject: string; email: string | null; emailVerified: boolean; name: string | null };
 
 /** What a provider's ID token says, once its signature, audience, issuer and nonce check out. */
-export async function profileFromIdToken(provider: Provider, idToken: string, nonce: string, extra: { appleName?: string | null } = {}, s: EffectiveSettings = settings()): Promise<Profile> {
+export async function profileFromIdToken(provider: OidcProvider, idToken: string, nonce: string, extra: { appleName?: string | null } = {}, s: EffectiveSettings = settings()): Promise<Profile> {
   const audience = clientId(provider, s);
   const { payload } = await jwtVerify(idToken, jwks(provider), {
     audience,
@@ -172,7 +183,7 @@ export async function profileFromIdToken(provider: Provider, idToken: string, no
 }
 
 /** The checks after the signature: nonce, Microsoft's issuer, and when an email counts as verified. */
-export function profileFromClaims(provider: Provider, payload: JWTPayload & Record<string, any>, nonce: string, extra: { appleName?: string | null } = {}): Profile {
+export function profileFromClaims(provider: OidcProvider, payload: JWTPayload & Record<string, any>, nonce: string, extra: { appleName?: string | null } = {}): Profile {
   if (payload.nonce !== nonce) throw new Error('The sign-in answer did not match this browser. Try again.');
   if (!payload.sub) throw new Error('The provider did not say who you are.');
   if (provider === 'microsoft' && payload.iss !== `https://login.microsoftonline.com/${payload.tid}/v2.0`) throw new Error('Unexpected Microsoft issuer.');
@@ -188,7 +199,7 @@ export function profileFromClaims(provider: Provider, payload: JWTPayload & Reco
 }
 
 /** Trades the code for tokens and returns the verified profile. */
-export async function finishOAuth(provider: Provider, flow: Flow, code: string, extra: { appleName?: string | null } = {}): Promise<Profile> {
+export async function finishOAuth(provider: OidcProvider, flow: Flow, code: string, extra: { appleName?: string | null } = {}): Promise<Profile> {
   const s = settings();
   const form = new URLSearchParams({
     grant_type: 'authorization_code', code, redirect_uri: redirectUri(provider, s),
@@ -207,7 +218,7 @@ export async function finishOAuth(provider: Provider, flow: Flow, code: string, 
   return profileFromIdToken(provider, body.id_token, flow.data.nonce, extra, s);
 }
 
-export const PROVIDER_NAMES: Record<Provider, string> = { google: 'Google', microsoft: 'Microsoft', apple: 'Apple' };
+export const PROVIDER_NAMES: Record<Provider, string> = { google: 'Google', microsoft: 'Microsoft', apple: 'Apple', citedevidence: 'CitedEvidence' };
 
 /**
  * The person a provider profile belongs to: the linked identity, else the account with the

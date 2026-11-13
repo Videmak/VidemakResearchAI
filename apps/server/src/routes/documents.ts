@@ -10,6 +10,7 @@ import { blocksToText, countWords } from '../lib/blocks.js';
 import { maybeAutoVersion } from '../lib/versions.js';
 import { broadcastDocument } from '../realtime.js';
 import { env } from '../env.js';
+import { requireAccess } from '../lib/plans.js';
 
 const ms = (value: Date | string | null | undefined) => (value ? new Date(value).getTime() : Date.now());
 
@@ -90,6 +91,8 @@ export function documentRoutes() {
       if (existing.owner_user_id !== user.id) throw new HTTPException(403, { message: 'Document id already exists' });
       return c.json(documentToRead(existing, await membersOf(id), 'owner'), 201);
     }
+    // Accounts on CitedEvidence: new documents need its plan (existing ones stay open).
+    await requireAccess(user.account_id);
     const blocks = parsed.data.blocks || [];
     const text = blocksToText(blocks);
     const title = parsed.data.title || 'Untitled document';

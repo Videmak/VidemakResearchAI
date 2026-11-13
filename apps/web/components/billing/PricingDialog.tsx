@@ -6,12 +6,33 @@ import { LuX, LuZap } from 'react-icons/lu';
 import { closePricing, usePlans, usePricingDialog, yearlySaving, type Interval } from '@/lib/billing';
 import { IntervalToggle, PlanCards } from './PlanCards';
 import { usePlanChoice } from './usePlanChoice';
+import { CitedEvidencePlanPanel, useCitedEvidencePlans } from './CitedEvidencePlans';
+import type { CitedEvidencePlans } from '@/lib/signin';
 
-/** The pricing pop-up: every Upgrade button and plan limit opens it. */
+/** The pricing pop-up: every Upgrade button and plan limit opens it (plans on CitedEvidence: its plans). */
 export function PricingDialog() {
   const { open, reason } = usePricingDialog();
-  if (!open) return null;
-  return createPortal(<PricingDialogBody reason={reason} />, document.body);
+  const citedevidence = useCitedEvidencePlans();
+  if (!open || citedevidence === undefined) return null;
+  return createPortal(citedevidence ? <CitedEvidenceDialog plans={citedevidence} reason={reason} /> : <PricingDialogBody reason={reason} />, document.body);
+}
+
+function CitedEvidenceDialog({ plans, reason }: { plans: CitedEvidencePlans; reason: string | null }) {
+  useEffect(() => {
+    const onKey = (event: KeyboardEvent) => { if (event.key === 'Escape') closePricing(); };
+    document.addEventListener('keydown', onKey);
+    return () => document.removeEventListener('keydown', onKey);
+  }, []);
+  return (
+    <div className="fixed inset-0 z-[20000] flex items-end justify-center bg-ink/45 sm:items-center sm:p-6" onMouseDown={(event) => { if (event.target === event.currentTarget) closePricing(); }}>
+      <div role="dialog" aria-modal="true" aria-label="Plans" className="relative w-full max-w-[480px] rounded-t-[22px] bg-soft px-6 pt-10 pb-8 sm:rounded-[22px]">
+        <button type="button" onClick={closePricing} aria-label="Close" className="absolute right-3 top-3 grid h-10 w-10 place-items-center rounded-full text-muted hover:bg-white hover:text-ink">
+          <LuX className="h-5 w-5" />
+        </button>
+        <CitedEvidencePlanPanel plans={plans} reason={reason} onAccess={closePricing} />
+      </div>
+    </div>
+  );
 }
 
 function PricingDialogBody({ reason }: { reason: string | null }) {

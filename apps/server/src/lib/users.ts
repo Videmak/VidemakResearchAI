@@ -1,19 +1,30 @@
 import { sql } from '../db.js';
 import { env } from '../env.js';
 import type { AuthUser } from '../auth.js';
-import { effectivePlan } from './plans.js';
+import { effectivePlan, isNoPlan } from './plans.js';
 import { queueNewsletterSync } from './newsletter.js';
+import { ceAccounts } from './citedevidence.js';
 
 /** Creating people and what the browser is told about them (shared by every sign-in method). */
 
-export type PublicUser = { id: string; email: string; full_name: string | null; plan: string; plan_name: string; is_admin: boolean };
+export type PublicUser = {
+  id: string; email: string; full_name: string | null; plan: string; plan_name: string; is_admin: boolean; has_access: boolean;
+  citedevidence_linked?: boolean;
+};
 
-/** The plan shown is the one in force (a lapsed subscription shows the free plan). */
+/**
+ * The plan shown is the one in force (a lapsed subscription shows the free plan). has_access is
+ * false only with accounts on CitedEvidence and no plan there that includes Videmak; then
+ * citedevidence_linked says whether they have signed in with CitedEvidence yet (sessions from
+ * before the switch have not).
+ */
 export async function publicUser(user: AuthUser): Promise<PublicUser> {
   const { plan } = await effectivePlan(user.account_id);
   return {
     id: user.id, email: user.email, full_name: user.full_name,
     plan: plan?.id ?? 'free', plan_name: plan?.name ?? 'Free', is_admin: Boolean(user.is_admin),
+    has_access: !(plan && isNoPlan(plan)),
+    ...(ceAccounts() ? { citedevidence_linked: (await sql`select 1 from citedevidence_links where user_id = ${user.id}`).length > 0 } : {}),
   };
 }
 
