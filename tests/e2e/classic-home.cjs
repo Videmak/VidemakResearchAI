@@ -37,7 +37,9 @@ const hrefs = (locator) => locator.evaluateAll((links) => links.map((link) => li
       const all = await hrefs(page.locator('a'));
       check(`/ ${tag}: every link is a real URL`, all.every((href) => /^https?:\/\//.test(href) && !href.includes('function(')), all.filter((href) => href.includes('function(')).length + ' broken');
       check(`/ ${tag}: Start Using CitedEvidence ×3 to citedevidence.com`, (await hrefs(page.locator('main a', { hasText: 'Start Using CitedEvidence' }))).filter((href) => href.startsWith(CE)).length === 3);
-      check(`/ ${tag}: 8 module links to CitedEvidence`, (await hrefs(page.locator('#citedevidence li a'))).filter((href) => href.startsWith(CE)).length === 8);
+      check(`/ ${tag}: 19 module links to CitedEvidence`, (await hrefs(page.locator('#citedevidence li a'))).filter((href) => href.startsWith(CE)).length === 19);
+      const toCe = all.filter((href) => href.startsWith(CE));
+      check(`/ ${tag}: every CitedEvidence link tagged utm_source=videmak`, toCe.length > 0 && toCe.every((href) => new URL(href).searchParams.get('utm_source') === 'videmak'), `${toCe.length} links`);
       check(`/ ${tag}: 6 guides + all articles to CitedEvidence help`, main.filter((href) => href.startsWith(`${CE}/help`)).length === 7);
       check(`/ ${tag}: archive buttons go to /login`, main.filter((href) => href === `${BASE}/login`).length === 2);
       check(`/ ${tag}: no sideways scroll`, (await page.evaluate(() => document.documentElement.scrollWidth - innerWidth)) <= 0);

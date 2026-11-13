@@ -4,7 +4,7 @@ import Link from 'next/link';
 import { useEffect, useState } from 'react';
 import { LuMenu, LuX, LuYoutube } from 'react-icons/lu';
 import { AuthAware } from '@/components/marketing/AuthAware';
-import { CE, WHATSAPP } from './links';
+import { ceLink, WHATSAPP } from './links';
 
 /**
  * The classic Videmak pages (home, legal pages, contact), kept as the old videmak.net showed them:
@@ -14,10 +14,10 @@ import { CE, WHATSAPP } from './links';
 
 const MENU = [
   { label: 'Home', href: '/' },
-  { label: 'Features', href: CE },
-  { label: 'Pricing', href: `${CE}/pricing` },
-  { label: 'FAQs', href: `${CE}/help` },
-  { label: 'Blogs', href: `${CE}/help` },
+  { label: 'Features', href: ceLink('/tools', 'menu') },
+  { label: 'Pricing', href: ceLink('/pricing', 'menu') },
+  { label: 'FAQs', href: ceLink('/help', 'menu') },
+  { label: 'Blogs', href: ceLink('/help', 'menu') },
 ];
 
 export function ClassicMenu({ signedIn }: { signedIn: boolean }) {
@@ -29,7 +29,7 @@ export function ClassicMenu({ signedIn }: { signedIn: boolean }) {
       signedOut={(
         <>
           <Link href="/login" className="text-[13px] font-semibold text-black hover:text-[#0d6efd]">Sign In</Link>
-          <a href={`${CE}/register?from=videmak&reason=registration-moved`} className="rounded-full bg-[#101828] px-6 py-2 text-[13px] font-semibold text-white hover:bg-black">Start on CitedEvidence</a>
+          <a href={`${ceLink('/register', 'menu')}&from=videmak`} className="rounded-full bg-[#101828] px-6 py-2 text-[13px] font-semibold text-white hover:bg-black">Start on CitedEvidence</a>
         </>
       )}
     />

@@ -1,8 +1,11 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
-import { LuArrowRight, LuBrain, LuFilePen, LuFileText, LuFolderOpen, LuLayers, LuQuote, LuSearch, LuSparkles, LuStickyNote } from 'react-icons/lu';
+import {
+  LuArrowRight, LuBadgeCheck, LuBookOpen, LuBrain, LuChartColumn, LuClipboardList, LuFileOutput, LuFilePen, LuFileSearch, LuFileText, LuFiles,
+  LuFolderOpen, LuLayers, LuListChecks, LuQuote, LuScanSearch, LuSearch, LuShuffle, LuSparkles, LuStickyNote, LuWandSparkles,
+} from 'react-icons/lu';
 import { RotatingHeadline } from '@/components/classic/ClassicParts';
-import { CE } from '@/components/classic/links';
+import { ceLink } from '@/components/classic/links';
 
 /**
  * videmak.net's home page, kept word for word as the old site showed it (owner's choice,
@@ -19,15 +22,28 @@ export const metadata: Metadata = {
   openGraph: { title: 'Videmak Research AI - Do Hours of Research in minutes', description: 'Do hours of research in minutes with advanced AI based research tools', url: 'https://videmak.net', siteName: 'Videmak Research AI', type: 'website' },
 };
 
+// Every CitedEvidence module, in CitedEvidence's own words (its admin feature list, 2026-11-13),
+// each linking to the module's public page there. The page is a funnel into CitedEvidence.
 const MODULES = [
-  { name: 'Deep Reasoning', text: 'Multiagent research with 200+ AI agents for source-aware academic work.', path: '/', action: 'Start deep research', icon: LuBrain },
-  { name: 'Find Articles', text: 'Search 300M+ articles, journals, authors, and grounded research search strings.', path: '/find-articles', action: 'Find articles', icon: LuSearch },
-  { name: 'PDF Chat', text: 'Ask questions from PDFs and turn papers into usable evidence.', path: '/pdf-chat', action: 'Chat with PDFs', icon: LuFileText },
-  { name: 'AI Editor', text: 'Rewrite, humanize, refine, and improve academic text in one editor.', path: '/ai-editor', action: 'Open AI Editor', icon: LuFilePen },
-  { name: 'Library', text: 'Organize papers, PDFs, notes, citations, and source material.', path: '/library', action: 'Open Library', icon: LuFolderOpen },
+  { name: 'Deep Reasoning', text: 'Multiagent research with 200+ AI agents for source-aware academic work.', path: '/ai-research-assistant', action: 'Start deep research', icon: LuBrain },
+  { name: 'Find Articles', text: 'Search 300M+ articles, journals, authors, and grounded research search strings.', path: '/research-paper-finder', action: 'Find articles', icon: LuSearch },
+  { name: 'PDF Chat', text: 'Ask questions from PDFs and turn papers into usable evidence.', path: '/chat-with-pdf', action: 'Chat with PDFs', icon: LuFileText },
+  { name: 'AI Editor', text: 'Rewrite, humanize, refine, and improve academic text in one editor.', path: '/ai-research-paper-writer', action: 'Open AI Editor', icon: LuFilePen },
+  { name: 'Library', text: 'Organize papers, PDFs, notes, citations, and source material.', path: '/zotero-mendeley-integration', action: 'Open Library', icon: LuFolderOpen },
   { name: 'Research Notes', text: 'Capture notes, evidence, and source-linked ideas while you research.', path: '/notes', action: 'Start notes', icon: LuStickyNote },
-  { name: 'Proposal & Literature Studio', text: 'Multiagent proposal and literature writing with thousands of citation styles.', path: '/research-agent', action: 'Use studio', icon: LuLayers },
-  { name: 'Citation Generator', text: 'Generate citations and manage references for academic writing.', path: '/citation-generator', action: 'Generate citations', icon: LuQuote },
+  { name: 'Thesis to Manuscript', text: 'Convert thesis chapters into a journal-ready manuscript with tables, figures, and references preserved.', path: '/features/thesis-to-manuscript', action: 'Convert thesis', icon: LuFileOutput },
+  { name: 'Proposal & Literature Studio', text: 'Multiagent proposal and literature writing with thousands of citation styles.', path: '/ai-literature-review', action: 'Use studio', icon: LuLayers },
+  { name: 'Citation Generator', text: 'Generate citations and manage references for academic writing.', path: '/ai-citation-generator', action: 'Generate citations', icon: LuQuote },
+  { name: 'Citation Checker', text: 'Check each reference against scholarly records: verified, wrong or not found.', path: '/ai-citation-checker', action: 'Check citations', icon: LuBadgeCheck },
+  { name: 'AI Thesis', text: 'Generate proposals, thesis sections, and long-form academic documents.', path: '/ai-research-proposal-generator', action: 'Build thesis', icon: LuBookOpen },
+  { name: 'Manuscript Reviewer', text: 'Review manuscripts for structure, clarity, journal fit, and readiness.', path: '/ai-peer-review', action: 'Review manuscript', icon: LuFileSearch },
+  { name: 'Data Analysis', text: 'Analyze datasets, compare groups, and produce research-ready summaries.', path: '/ai-data-analysis', action: 'Analyze data', icon: LuChartColumn },
+  { name: 'Systematic Review', text: 'Run structured evidence reviews with screening, extraction, and synthesis.', path: '/systematic-review-software', action: 'Start review', icon: LuListChecks },
+  { name: 'AI Humanizer', text: 'Make AI-assisted writing sound more natural and academic.', path: '/ai-humanizer', action: 'Humanize text', icon: LuWandSparkles },
+  { name: 'AI Detector', text: 'Review text for AI-likeness and writing quality signals.', path: '/ai-content-detector', action: 'Check text', icon: LuScanSearch },
+  { name: 'Paraphraser', text: 'Rewrite text while preserving meaning and academic tone.', path: '/ai-paraphrasing-tool', action: 'Paraphrase text', icon: LuShuffle },
+  { name: 'PDF Tools', text: 'Prepare, convert, secure, and work with research PDFs.', path: '/features/pdf-tools', action: 'Open PDF tools', icon: LuFiles },
+  { name: 'Data Collection Tools', text: 'Create forms and collect structured research data.', path: '/features/data-collection', action: 'Build a form', icon: LuClipboardList },
 ];
 
 const STATS = [['300M+', 'research articles'], ['200+', 'AI research agents'], ['1000s', 'citation styles'], ['1 login', 'for both platforms']];
@@ -60,7 +76,7 @@ export default function ClassicHome() {
           </p>
           <div className="mt-6">
             <p className="pb-4 text-[17px] text-[#1e1e2d] md:text-[19px]">Videmak has evolved into CitedEvidence. Start your next research workflow there.</p>
-            <a href={CE} className="inline-block rounded-full bg-[#101828] px-10 py-3 text-[17px] font-bold text-white transition-transform hover:scale-105">Start Using CitedEvidence</a>
+            <a href={ceLink()} className="inline-block rounded-full bg-[#101828] px-10 py-3 text-[17px] font-bold text-white transition-transform hover:scale-105">Start Using CitedEvidence</a>
           </div>
         </div>
         <svg className="block h-[60px] w-full md:h-[105px]" preserveAspectRatio="none" viewBox="0 0 1440 105" aria-hidden="true">
@@ -77,7 +93,7 @@ export default function ClassicHome() {
               <h2 id="ce-title" className="text-[30px] font-extrabold leading-[1.15] text-[#111827] md:text-[36px]">Move from searching to cited research output faster</h2>
               <p className="mt-4 text-[16px] leading-[1.8] text-[#4b5563]">CitedEvidence combines deep reasoning, article discovery, PDF chat, citation generation, literature review writing, notes, and library management in one research workspace. Existing Videmak users can still access saved documents here in read-only mode.</p>
               <div className="mt-6 flex flex-wrap gap-3">
-                <a href={CE} className={pill}>Start Using CitedEvidence</a>
+                <a href={ceLink()} className={pill}>Start Using CitedEvidence</a>
                 <Link href="/login" className={plain}>Access Videmak Archive</Link>
               </div>
             </div>
@@ -90,14 +106,14 @@ export default function ClassicHome() {
               ))}
             </ul>
           </div>
-          <h3 className="mb-8 mt-16 max-w-[780px] text-[22px] font-extrabold leading-[1.25] text-[#111827] md:text-[26px]">Choose the CitedEvidence workflow that matches what you used in Videmak</h3>
+          <h3 className="mb-8 mt-16 max-w-[780px] text-[22px] font-extrabold leading-[1.25] text-[#111827] md:text-[26px]">Choose the CitedEvidence workflow that matches your academic journey</h3>
           <ul className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
             {MODULES.map(({ name, text, path, action, icon: Icon }) => (
-              <li key={name} className="flex min-h-[260px] flex-col rounded-lg border border-[#e5e7eb] bg-white p-[22px]">
+              <li key={name} className="flex flex-col rounded-lg border border-[#e5e7eb] bg-white p-[18px] sm:min-h-[230px] sm:p-[22px]">
                 <Icon className="mb-3 size-[22px] text-[#2563eb]" aria-hidden="true" />
                 <h4 className="mb-2 text-[16px] font-bold text-[#111827]">{name}</h4>
                 <p className="flex-1 text-[13px] leading-[1.6] text-[#64748b]">{text}</p>
-                <a href={`${CE}${path}`} className={`${pill} mt-3 self-start px-4 py-1.5 text-[11px]`}>{action}</a>
+                <a href={ceLink(path)} className={`${pill} mt-3 self-start px-4 py-1.5 text-[11px]`}>{action}</a>
               </li>
             ))}
           </ul>
@@ -119,12 +135,12 @@ export default function ClassicHome() {
               <p className="mb-2 text-[12px] font-extrabold uppercase tracking-[.08em] text-[#2563eb]">CitedEvidence Help Center</p>
               <h2 id="help-title" className="max-w-[760px] text-[28px] font-extrabold leading-[1.2] text-[#111827] md:text-[32px]">Research guides, citation tutorials, and AI workflow articles</h2>
             </div>
-            <a href={`${CE}/help`} className={`${pill} self-start lg:self-auto`}>View All Articles</a>
+            <a href={ceLink('/help')} className={`${pill} self-start lg:self-auto`}>View All Articles</a>
           </div>
           <ul className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
             {ARTICLES.map((article) => (
               <li key={article.path}>
-                <a href={`${CE}${article.path}`} className="flex h-full flex-col rounded-lg border border-[#e5e7eb] bg-white p-6 text-[#111827] transition-shadow hover:shadow-[0_12px_30px_-18px_rgba(15,23,42,.35)]">
+                <a href={ceLink(article.path)} className="flex h-full flex-col rounded-lg border border-[#e5e7eb] bg-white p-6 text-[#111827] transition-shadow hover:shadow-[0_12px_30px_-18px_rgba(15,23,42,.35)]">
                   <span className="text-[12px] font-extrabold text-[#2563eb]">{article.topic}</span>
                   <span className="mb-4 mt-3 flex-1 text-[18px] font-extrabold leading-[1.35]">{article.title}</span>
                   <span className="text-[13px] font-extrabold text-[#2563eb]">Read guide <LuArrowRight className="ml-1 inline size-3.5" aria-hidden="true" /></span>
@@ -135,7 +151,7 @@ export default function ClassicHome() {
           <div className="mt-12 rounded-lg border border-[#bfdbfe] bg-[#eff6ff] p-[30px] text-center">
             <h3 className="mb-2 text-[18px] font-bold text-[#111827]">Ready to turn sources into cited research?</h3>
             <p className="mb-4 text-[#475569]">Start in CitedEvidence, then use Videmak only when you need old read-only documents and history.</p>
-            <a href={CE} className={pill}>Start Using CitedEvidence</a>
+            <a href={ceLink()} className={pill}>Start Using CitedEvidence</a>
           </div>
         </div>
       </section>
